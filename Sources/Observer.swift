@@ -11,6 +11,7 @@ import Foundation
 /// An Observer is a simple wrapper around a function which can receive Events
 /// (typically from a Signal).
 public struct Observer<Value, Error: ErrorProtocol> {
+    
     public typealias Action = (Event<Value, Error>) -> Void
     
     public let action: Action
@@ -19,7 +20,14 @@ public struct Observer<Value, Error: ErrorProtocol> {
         self.action = action
     }
     
-    public init(failed: ((Error) -> Void)? = nil, completed: (() -> Void)? = nil, interrupted: (() -> Void)? = nil, next: ((Value) -> Void)? = nil) {
+    /// Creates an Observer with an action which calls each of the provided 
+    /// callbacks
+    public init(
+        failed: ((Error) -> Void)? = nil,
+        completed: (() -> Void)? = nil,
+        interrupted: (() -> Void)? = nil,
+        next: ((Value) -> Void)? = nil)
+    {
         self.init { event in
             switch event {
             case let .Next(value):

@@ -13,6 +13,7 @@ import Foundation
 /// Signals must conform to the grammar:
 /// `Next* (Failed | Completed | Interrupted)?`
 public enum Event<Value, Error: ErrorProtocol> {
+    
     /// A value provided by the signal.
     case Next(Value)
     

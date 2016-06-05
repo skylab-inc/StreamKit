@@ -54,6 +54,7 @@ public final class ActionDisposable: Disposable {
 /// A disposable that, upon deinitialization, will automatically dispose of
 /// another disposable.
 public final class ScopedDisposable: Disposable {
+    
     /// The disposable which will be disposed when the ScopedDisposable
     /// deinitializes.
     public let innerDisposable: Disposable
@@ -79,6 +80,7 @@ public final class ScopedDisposable: Disposable {
 
 /// A disposable that will optionally dispose of another disposable.
 public final class SerialDisposable: Disposable {
+    
     private struct State {
         var innerDisposable: Disposable? = nil
         var disposed = false

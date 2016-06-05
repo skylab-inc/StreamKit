@@ -9,9 +9,8 @@
 import Foundation
 
 public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSignalType {
-    public typealias Observer = Reactive.Observer<Value, Error>
     
-    internal var observers = Bag<Observer>()
+    internal var observers = Bag<Observer<Value, Error>>()
     
     /// Initializes a Signal that will immediately invoke the given generator,
     /// then forward events sent to the given observer.
@@ -20,11 +19,11 @@ public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSign
     /// if a terminating event is sent to the observer. The Signal itself will
     /// remain alive until the observer is released. This is because the observer
     /// captures a self reference.
-    public init(_ generator: (Observer) -> Disposable?) {
+    public init(_ generator: (Observer<Value, Error>) -> Disposable?) {
         
         let generatorDisposable = SerialDisposable()
 
-        let inputObserver = Observer { event in
+        let inputObserver = Observer<Value, Error> { event in
             if case .Interrupted = event {
                 
                 self.interrupt()
@@ -49,7 +48,7 @@ public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSign
     ///
     /// Returns a Disposable which can be used to disconnect the observer. Disposing
     /// of the Disposable will have no effect on the Signal itself.
-    public func add(observer: Observer) -> Disposable? {
+    public func add(observer: Observer<Value, Error>) -> Disposable? {
         let token = observers.insert(value: observer)
         return ActionDisposable { [weak self] in
             self?.observers.removeValueForToken(token: token)
@@ -62,8 +61,8 @@ public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSign
     ///
     /// The Signal will remain alive until a terminating event is sent to the
     /// observer.
-    public static func pipe() -> (Signal, Observer) {
-        var observer: Observer!
+    public static func pipe() -> (Signal, Observer<Value, Error>) {
+        var observer: Observer<Value, Error>!
         let signal = self.init { innerObserver in
             observer = innerObserver
             return nil
@@ -83,7 +82,7 @@ public protocol SignalType {
     /// Observes the Signal by sending any future events to the given observer.
     func add(observer: Observer<Value, Error>) -> Disposable?
 
-    init(_ generator: (Signal<Value, Error>.Observer) -> Disposable?)
+    init(_ generator: (Observer<Value, Error>) -> Disposable?)
 }
 
 /// An internal protocol for adding methods that require access to the observers
@@ -168,7 +167,7 @@ extension SignalType {
 
     /// Convenience override for add(observer:) to allow trailing-closure style
     /// invocations.
-    public func on(action: Signal<Value, Error>.Observer.Action) -> Disposable? {
+    public func on(action: Observer<Value, Error>.Action) -> Disposable? {
         return add(observer: Observer(action))
     }
     

@@ -6,6 +6,7 @@
 //
 //
 
+/// A token for the identification of an item in a Bag.
 public final class RemovalToken {
     private var identifier: UInt?
     
