@@ -103,7 +103,7 @@ public final class SerialDisposable: Disposable {
         
         set(d) {
             var oldState = state
-            oldState.innerDisposable = d
+            state.innerDisposable = d
             
             oldState.innerDisposable?.dispose()
             if oldState.disposed {
