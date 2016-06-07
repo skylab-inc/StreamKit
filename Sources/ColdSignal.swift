@@ -88,6 +88,15 @@ public final class ColdSignal<Value, Error: ErrorProtocol>: ColdSignalType, Inte
     
 }
 
+extension ColdSignal: CustomDebugStringConvertible {
+    
+    public var debugDescription: String {
+        let obs = Array(self.observers.map { String($0) })
+        return "ColdSignal[\(obs.joined(separator: ", "))]"
+    }
+    
+}
+
 public protocol ColdSignalType: SignalType {
     
     /// Invokes the closure provided upon initialization, and passes in a newly

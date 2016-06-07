@@ -71,6 +71,15 @@ public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSign
     }
 }
 
+extension Signal: CustomDebugStringConvertible {
+    
+    public var debugDescription: String {
+        let obs = Array(self.observers.map { String($0) })
+        return "Signal[\(obs.joined(separator: ", "))]"
+    }
+    
+}
+
 public protocol SignalType {
     /// The type of values being sent on the signal.
     associatedtype Value
