@@ -6,7 +6,7 @@
         <BuildableReference
           BuildableIdentifier = "primary"
           BlueprintIdentifier = "______Target_C7"
-          BuildableName = "libC7.dylib"
+          BuildableName = "C7.framework"
           BlueprintName = "C7"
           ReferencedContainer = "container:Reactive.xcodeproj">
         </BuildableReference>
@@ -15,7 +15,7 @@
         <BuildableReference
           BuildableIdentifier = "primary"
           BlueprintIdentifier = "______Target_Log"
-          BuildableName = "libLog.dylib"
+          BuildableName = "Log.framework"
           BlueprintName = "Log"
           ReferencedContainer = "container:Reactive.xcodeproj">
         </BuildableReference>
@@ -24,7 +24,7 @@
         <BuildableReference
           BuildableIdentifier = "primary"
           BlueprintIdentifier = "______Target_Reactive"
-          BuildableName = "libReactive.dylib"
+          BuildableName = "Reactive.framework"
           BlueprintName = "Reactive"
           ReferencedContainer = "container:Reactive.xcodeproj">
         </BuildableReference>
