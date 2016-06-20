@@ -116,6 +116,7 @@ extension ColdSignalType {
     /// invokes start on the ColdSignal.
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
+    @discardableResult
     public func start(with observer: Observer<Value, Error>) -> Disposable? {
         let disposable = add(observer: observer)
         start()
@@ -126,6 +127,7 @@ extension ColdSignalType {
     /// invokes start on the ColdSignal.
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
+    @discardableResult
     public func start(_ observerAction: Observer<Value, Error>.Action) -> Disposable? {
         return start(with: Observer(observerAction))
     }
@@ -134,6 +136,7 @@ extension ColdSignalType {
     /// invokes start on the ColdSignal.
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
+    @discardableResult
     public func startWithNext(next: (Value) -> Void) -> Disposable? {
         return start(with: Observer(next: next))
     }
@@ -142,6 +145,7 @@ extension ColdSignalType {
     /// immediately invokes start on the ColdSignal.
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
+    @discardableResult
     public func startWithCompleted(completed: () -> Void) -> Disposable? {
         return start(with: Observer(completed: completed))
     }
@@ -150,6 +154,7 @@ extension ColdSignalType {
     /// immediately invokes start on the ColdSignal.
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
+    @discardableResult
     public func startWithFailed(failed: (Error) -> Void) -> Disposable? {
         return start(with: Observer(failed: failed))
     }
@@ -158,6 +163,7 @@ extension ColdSignalType {
     /// immediately invokes start on the ColdSignal.
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
+    @discardableResult
     public func startWithInterrupted(interrupted: () -> Void) -> Disposable? {
         return start(with: Observer(interrupted: interrupted))
     }

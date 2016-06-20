@@ -176,6 +176,7 @@ extension SignalType {
 
     /// Convenience override for add(observer:) to allow trailing-closure style
     /// invocations.
+    @discardableResult
     public func on(action: Observer<Value, Error>.Action) -> Disposable? {
         return add(observer: Observer(action))
     }
@@ -186,6 +187,7 @@ extension SignalType {
     /// Returns a Disposable which can be used to stop the invocation of the
     /// callbacks. Disposing of the Disposable will have no effect on the Signal
     /// itself.
+    @discardableResult
     public func onNext(next: (Value) -> Void) -> Disposable? {
         return add(observer: Observer(next: next))
     }
@@ -196,6 +198,7 @@ extension SignalType {
     /// Returns a Disposable which can be used to stop the invocation of the
     /// callback. Disposing of the Disposable will have no effect on the Signal
     /// itself.
+    @discardableResult
     public func onCompleted(completed: () -> Void) -> Disposable? {
         return add(observer: Observer(completed: completed))
     }
@@ -206,6 +209,7 @@ extension SignalType {
     /// Returns a Disposable which can be used to stop the invocation of the
     /// callback. Disposing of the Disposable will have no effect on the Signal
     /// itself.
+    @discardableResult
     public func onFailed(error: (Error) -> Void) -> Disposable? {
         return add(observer: Observer(failed: error))
     }
@@ -217,6 +221,7 @@ extension SignalType {
     /// Returns a Disposable which can be used to stop the invocation of the
     /// callback. Disposing of the Disposable will have no effect on the Signal
     /// itself.
+    @discardableResult
     public func onInterrupted(interrupted: () -> Void) -> Disposable? {
         return add(observer: Observer(interrupted: interrupted))
     }
