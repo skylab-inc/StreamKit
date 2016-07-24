@@ -244,7 +244,6 @@ extension SignalType {
     }
     
     /// Maps each value in the signal to a new value.
-    @warn_unused_result(message: "Did you forget to add and observer to the signal?")
     public func map<U>(transform: (Value) -> U) -> Signal<U, Error> {
         return Signal { observer in
             return self.on { event -> Void in
@@ -254,7 +253,6 @@ extension SignalType {
     }
     
     /// Maps errors in the signal to a new error.
-    @warn_unused_result(message: "Did you forget to add and observer to the signal?")
     public func mapError<F>(transform: (Error) -> F) -> Signal<Value, F> {
         return Signal { observer in
             return self.on { event -> Void in
@@ -264,7 +262,6 @@ extension SignalType {
     }
     
     /// Preserves only the values of the signal that pass the given predicate.
-    @warn_unused_result(message: "Did you forget to add and observer to the signal?")
     public func filter(predicate: (Value) -> Bool) -> Signal<Value, Error> {
         return Signal { observer in
             return self.on { (event: Event<Value, Error>) -> Void in
@@ -281,7 +278,6 @@ extension SignalType {
     }
     
     /// Aggregate values into a single combined value. Mirrors the Swift Collection
-    @warn_unused_result(message: "Did you forget to add and observer to the signal?")
     public func reduce<T>(initial: T, _ combine: (T, Value) -> T) -> Signal<T, Error> {
         return Signal { observer in
             var accumulator = initial
