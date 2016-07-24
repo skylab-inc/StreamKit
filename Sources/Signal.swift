@@ -279,4 +279,19 @@ extension SignalType {
             }
         }
     }
+    
+    /// Aggregate values into a single combined value. Mirrors the Swift Collection
+    @warn_unused_result(message: "Did you forget to add and observer to the signal?")
+    public func reduce<T>(initial: T, _ combine: (T, Value) -> T) -> Signal<T, Error> {
+        return Signal { observer in
+            var accumulator = initial
+            return self.on { event in
+                observer.action(event.map { value in
+                    accumulator = combine(accumulator, value)
+                    return accumulator
+                })
+            }
+        }
+    }
+    
 }
