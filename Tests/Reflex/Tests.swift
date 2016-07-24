@@ -1,4 +1,4 @@
-@testable import Reactive
+@testable import Reflex
 
 import XCTest
 
