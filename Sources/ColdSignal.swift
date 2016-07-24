@@ -8,7 +8,7 @@
 
 import Foundation
 
-public final class ColdSignal<Value, Error: ErrorProtocol>: ColdSignalType, InternalSignalType {
+public final class ColdSignal<Value, Error: ErrorProtocol>: ColdSignalType, InternalSignalType, SpecialSignalGenerator {
     internal var observers = Bag<Observer<Value, Error>>()
     
     private let startHandler: (Observer<Value, Error>) -> Disposable?

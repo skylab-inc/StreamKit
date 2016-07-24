@@ -121,7 +121,7 @@
 		"_____Product_C7" /* C7.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = C7.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"_____Product_Log" /* Log.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Log.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"_____Product_Reactive" /* Reactive.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Reactive.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		"_____Product_ReactiveTestSuite" /* ReactiveTestSuite.xctest */ = {isa = PBXFileReference; lastKnownFileType = file; path = ReactiveTestSuite.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		"_____Product_ReactiveTestSuite" /* ReactiveTestSuite.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = ReactiveTestSuite.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

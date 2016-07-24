@@ -8,7 +8,7 @@
 
 import Foundation
 
-public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSignalType {
+public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSignalType, SpecialSignalGenerator {
     
     internal var observers = Bag<Observer<Value, Error>>()
     
@@ -80,7 +80,8 @@ extension Signal: CustomDebugStringConvertible {
     
 }
 
-public protocol SignalType {
+public protocol SpecialSignalGenerator {
+    
     /// The type of values being sent on the signal.
     associatedtype Value
     
@@ -88,32 +89,11 @@ public protocol SignalType {
     /// then `NoError` can be used.
     associatedtype Error: ErrorProtocol
     
-    /// Observes the Signal by sending any future events to the given observer.
-    func add(observer: Observer<Value, Error>) -> Disposable?
-
     init(_ generator: (Observer<Value, Error>) -> Disposable?)
-}
-
-/// An internal protocol for adding methods that require access to the observers
-/// of the signal.
-internal protocol InternalSignalType: SignalType {
-    
-    var observers: Bag<Observer<Value, Error>> { get }
-
-}
-
-extension InternalSignalType {
-    
-    /// Interrupts all observers and terminates the stream.
-    func interrupt() {
-        for observer in self.observers {
-            observer.sendInterrupted()
-        }
-    }
     
 }
 
-extension SignalType {
+extension SpecialSignalGenerator {
     
     /// Creates a Signal that will immediately send one value
     /// then complete.
@@ -173,6 +153,43 @@ extension SignalType {
     public static var never: Self {
         return self.init { _ in return nil }
     }
+    
+}
+
+public protocol SignalType {
+    /// The type of values being sent on the signal.
+    associatedtype Value
+    
+    /// The type of error that can occur on the signal. If errors aren't possible
+    /// then `NoError` can be used.
+    associatedtype Error: ErrorProtocol
+    
+    /// Observes the Signal by sending any future events to the given observer.
+    func add(observer: Observer<Value, Error>) -> Disposable?
+    
+
+}
+
+/// An internal protocol for adding methods that require access to the observers
+/// of the signal.
+internal protocol InternalSignalType: SignalType {
+    
+    var observers: Bag<Observer<Value, Error>> { get }
+    
+}
+
+extension InternalSignalType {
+    
+    /// Interrupts all observers and terminates the stream.
+    func interrupt() {
+        for observer in self.observers {
+            observer.sendInterrupted()
+        }
+    }
+    
+}
+
+extension SignalType {
 
     /// Convenience override for add(observer:) to allow trailing-closure style
     /// invocations.
