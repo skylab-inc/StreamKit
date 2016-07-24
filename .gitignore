@@ -67,6 +67,7 @@ xcuserdata/
 *.xccheckout
 *.xcscmblueprint
 *.xcodeproj/*.plist
+*.xcodeproj
 
 
 ### Swift ###
