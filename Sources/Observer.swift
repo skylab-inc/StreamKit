@@ -45,6 +45,11 @@ public struct Observer<Value, Error: ErrorProtocol> {
         }
     }
     
+    
+    public func sendEvent(_ event: Event<Value, Error>) {
+        action(event)
+    }
+    
     /// Puts a `Next` event into the given observer.
     public func sendNext(_ value: Value) {
         action(.Next(value))

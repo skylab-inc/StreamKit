@@ -248,7 +248,7 @@ extension SignalType {
     public func map<U>(transform: (Value) -> U) -> Signal<U, Error> {
         return Signal { observer in
             return self.on { event -> Void in
-                observer.action(event.map(transform))
+                observer.sendEvent(event.map(transform))
             }
         }
     }
@@ -258,7 +258,7 @@ extension SignalType {
     public func mapError<F>(transform: (Error) -> F) -> Signal<Value, F> {
         return Signal { observer in
             return self.on { event -> Void in
-                observer.action(event.mapError(transform))
+                observer.sendEvent(event.mapError(transform))
             }
         }
     }
@@ -269,7 +269,7 @@ extension SignalType {
         return Signal { observer in
             return self.on { (event: Event<Value, Error>) -> Void in
                 guard let value = event.value else {
-                    observer.action(event)
+                    observer.sendEvent(event)
                     return
                 }
                 
