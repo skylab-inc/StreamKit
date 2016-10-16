@@ -227,7 +227,7 @@ extension SignalType {
     /// callback. Disposing of the Disposable will have no effect on the Signal
     /// itself.
     @discardableResult
-    public func onFailed(error: @escaping (Error) -> Void) -> Disposable? {
+    public func onFailed(error: @escaping (ErrorType) -> Void) -> Disposable? {
         return add(observer: Observer(failed: error))
     }
     
@@ -253,7 +253,7 @@ extension SignalType {
     }
     
     /// Maps errors in the signal to a new error.
-    public func mapError<F>(transform: @escaping (Error) -> F) -> Signal<Value, F> {
+    public func mapError<F>(transform: @escaping (ErrorType) -> F) -> Signal<Value, F> {
         return Signal { observer in
             return self.on { event -> Void in
                 observer.sendEvent(event.mapError(transform))
