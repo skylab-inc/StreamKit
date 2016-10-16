@@ -8,10 +8,10 @@
 
 import Foundation
 
-public final class ColdSignal<Value, Error: ErrorProtocol>: ColdSignalType, InternalSignalType, SpecialSignalGenerator {
-    internal var observers = Bag<Observer<Value, Error>>()
+public final class ColdSignal<Value, ErrorType: Error>: ColdSignalType, InternalSignalType, SpecialSignalGenerator {
+    internal var observers = Bag<Observer<Value, ErrorType>>()
     
-    private let startHandler: (Observer<Value, Error>) -> Disposable?
+    private let startHandler: (Observer<Value, ErrorType>) -> Disposable?
     
     private var cancelDisposable: Disposable?
     
@@ -28,7 +28,7 @@ public final class ColdSignal<Value, Error: ErrorProtocol>: ColdSignalType, Inte
     /// 
     /// Invoking `start()` will have no effect until the signal is stopped. After
     /// `stop()` is called this process may be repeated.
-    public init(_ generator: (Observer<Value, Error>) -> Disposable?) {
+    public init(_ generator: @escaping (Observer<Value, ErrorType>) -> Disposable?) {
         self.startHandler = generator
     }
     
@@ -39,7 +39,7 @@ public final class ColdSignal<Value, Error: ErrorProtocol>: ColdSignalType, Inte
     /// with the signal and immediately send an `Interrupted` event.
     
     public func start() {
-        let observer = Observer<Value, Error> { event in
+        let observer = Observer<Value, ErrorType> { event in
             if case .Interrupted = event {
                 
                 self.interrupt()
@@ -79,7 +79,7 @@ public final class ColdSignal<Value, Error: ErrorProtocol>: ColdSignalType, Inte
     ///
     /// Returns a Disposable which can be used to disconnect the observer. Disposing
     /// of the Disposable will have no effect on the Signal itself.
-    public func add(observer: Observer<Value, Error>) -> Disposable? {
+    public func add(observer: Observer<Value, ErrorType>) -> Disposable? {
         let token = self.observers.insert(value: observer)
         return ActionDisposable {
             self.observers.removeValueForToken(token: token)
@@ -91,7 +91,7 @@ public final class ColdSignal<Value, Error: ErrorProtocol>: ColdSignalType, Inte
 extension ColdSignal: CustomDebugStringConvertible {
     
     public var debugDescription: String {
-        let obs = Array(self.observers.map { String($0) })
+        let obs = Array(self.observers.map { String(describing: $0) })
         return "ColdSignal[\(obs.joined(separator: ", "))]"
     }
     
@@ -117,7 +117,7 @@ extension ColdSignalType {
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
-    public func start(with observer: Observer<Value, Error>) -> Disposable? {
+    public func start(with observer: Observer<Value, ErrorType>) -> Disposable? {
         let disposable = add(observer: observer)
         start()
         return disposable
@@ -128,7 +128,7 @@ extension ColdSignalType {
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
-    public func start(_ observerAction: Observer<Value, Error>.Action) -> Disposable? {
+    public func start(_ observerAction: @escaping Observer<Value, ErrorType>.Action) -> Disposable? {
         return start(with: Observer(observerAction))
     }
     
@@ -137,7 +137,7 @@ extension ColdSignalType {
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
-    public func startWithNext(next: (Value) -> Void) -> Disposable? {
+    public func startWithNext(next: @escaping (Value) -> Void) -> Disposable? {
         return start(with: Observer(next: next))
     }
     
@@ -146,7 +146,7 @@ extension ColdSignalType {
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
-    public func startWithCompleted(completed: () -> Void) -> Disposable? {
+    public func startWithCompleted(completed: @escaping () -> Void) -> Disposable? {
         return start(with: Observer(completed: completed))
     }
     
@@ -155,7 +155,7 @@ extension ColdSignalType {
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
-    public func startWithFailed(failed: (Error) -> Void) -> Disposable? {
+    public func startWithFailed(failed: @escaping (ErrorType) -> Void) -> Disposable? {
         return start(with: Observer(failed: failed))
     }
     
@@ -164,7 +164,7 @@ extension ColdSignalType {
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
-    public func startWithInterrupted(interrupted: () -> Void) -> Disposable? {
+    public func startWithInterrupted(interrupted: @escaping () -> Void) -> Disposable? {
         return start(with: Observer(interrupted: interrupted))
     }
 

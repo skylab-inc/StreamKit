@@ -8,9 +8,9 @@
 
 import Foundation
 
-public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSignalType, SpecialSignalGenerator {
+public final class Signal<Value, ErrorType: Error>: SignalType, InternalSignalType, SpecialSignalGenerator {
     
-    internal var observers = Bag<Observer<Value, Error>>()
+    internal var observers = Bag<Observer<Value, ErrorType>>()
     
     /// Initializes a Signal that will immediately invoke the given generator,
     /// then forward events sent to the given observer.
@@ -19,13 +19,13 @@ public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSign
     /// if a terminating event is sent to the observer. The Signal itself will
     /// remain alive until the observer is released. This is because the observer
     /// captures a self reference.
-    public init(_ generator: (Observer<Value, Error>) -> Disposable?) {
+    public init(_ generator:  @escaping (Observer<Value, ErrorType>) -> Disposable?) {
         
         let generatorDisposable = SerialDisposable()
 
-        let inputObserver = Observer<Value, Error> { event in
+        let inputObserver = Observer<Value, ErrorType> { event in
             if case .Interrupted = event {
-                
+                                
                 self.interrupt()
                 
             } else {
@@ -48,7 +48,7 @@ public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSign
     ///
     /// Returns a Disposable which can be used to disconnect the observer. Disposing
     /// of the Disposable will have no effect on the Signal itself.
-    public func add(observer: Observer<Value, Error>) -> Disposable? {
+    public func add(observer: Observer<Value, ErrorType>) -> Disposable? {
         let token = observers.insert(value: observer)
         return ActionDisposable { [weak self] in
             self?.observers.removeValueForToken(token: token)
@@ -61,8 +61,8 @@ public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSign
     ///
     /// The Signal will remain alive until a terminating event is sent to the
     /// observer.
-    public static func pipe() -> (Signal, Observer<Value, Error>) {
-        var observer: Observer<Value, Error>!
+    public static func pipe() -> (Signal, Observer<Value, ErrorType>) {
+        var observer: Observer<Value, ErrorType>!
         let signal = self.init { innerObserver in
             observer = innerObserver
             return nil
@@ -74,7 +74,7 @@ public final class Signal<Value, Error: ErrorProtocol>: SignalType, InternalSign
 extension Signal: CustomDebugStringConvertible {
     
     public var debugDescription: String {
-        let obs = Array(self.observers.map { String($0) })
+        let obs = Array(self.observers.map { String(describing: $0) })
         return "Signal[\(obs.joined(separator: ", "))]"
     }
     
@@ -87,9 +87,9 @@ public protocol SpecialSignalGenerator {
     
     /// The type of error that can occur on the signal. If errors aren't possible
     /// then `NoError` can be used.
-    associatedtype Error: ErrorProtocol
+    associatedtype ErrorType: Error
     
-    init(_ generator: (Observer<Value, Error>) -> Disposable?)
+    init(_ generator: @escaping (Observer<Value, ErrorType>) -> Disposable?)
     
 }
 
@@ -107,7 +107,7 @@ extension SpecialSignalGenerator {
     
     /// Creates a Signal that will immediately fail with the
     /// given error.
-    public init(error: Error) {
+    public init(error: ErrorType) {
         self.init { observer in
             observer.sendFailed(error)
             return nil
@@ -116,7 +116,7 @@ extension SpecialSignalGenerator {
     
     /// Creates a Signal that will immediately send the values
     /// from the given sequence, then complete.
-    public init<S: Sequence where S.Iterator.Element == Value>(values: S) {
+    public init<S: Sequence>(values: S) where S.Iterator.Element == Value {
         self.init { observer in
             var disposed = false
             for value in values {
@@ -162,10 +162,10 @@ public protocol SignalType {
     
     /// The type of error that can occur on the signal. If errors aren't possible
     /// then `NoError` can be used.
-    associatedtype Error: ErrorProtocol
+    associatedtype ErrorType: Error
     
     /// Observes the Signal by sending any future events to the given observer.
-    func add(observer: Observer<Value, Error>) -> Disposable?
+    func add(observer: Observer<Value, ErrorType>) -> Disposable?
     
 
 }
@@ -174,7 +174,7 @@ public protocol SignalType {
 /// of the signal.
 internal protocol InternalSignalType: SignalType {
     
-    var observers: Bag<Observer<Value, Error>> { get }
+    var observers: Bag<Observer<Value, ErrorType>> { get }
     
 }
 
@@ -194,7 +194,7 @@ extension SignalType {
     /// Convenience override for add(observer:) to allow trailing-closure style
     /// invocations.
     @discardableResult
-    public func on(action: Observer<Value, Error>.Action) -> Disposable? {
+    public func on(action: @escaping Observer<Value, ErrorType>.Action) -> Disposable? {
         return add(observer: Observer(action))
     }
     
@@ -205,7 +205,7 @@ extension SignalType {
     /// callbacks. Disposing of the Disposable will have no effect on the Signal
     /// itself.
     @discardableResult
-    public func onNext(next: (Value) -> Void) -> Disposable? {
+    public func onNext(next: @escaping (Value) -> Void) -> Disposable? {
         return add(observer: Observer(next: next))
     }
     
@@ -216,7 +216,7 @@ extension SignalType {
     /// callback. Disposing of the Disposable will have no effect on the Signal
     /// itself.
     @discardableResult
-    public func onCompleted(completed: () -> Void) -> Disposable? {
+    public func onCompleted(completed: @escaping () -> Void) -> Disposable? {
         return add(observer: Observer(completed: completed))
     }
     
@@ -227,7 +227,7 @@ extension SignalType {
     /// callback. Disposing of the Disposable will have no effect on the Signal
     /// itself.
     @discardableResult
-    public func onFailed(error: (Error) -> Void) -> Disposable? {
+    public func onFailed(error: @escaping (Error) -> Void) -> Disposable? {
         return add(observer: Observer(failed: error))
     }
     
@@ -239,12 +239,12 @@ extension SignalType {
     /// callback. Disposing of the Disposable will have no effect on the Signal
     /// itself.
     @discardableResult
-    public func onInterrupted(interrupted: () -> Void) -> Disposable? {
+    public func onInterrupted(interrupted: @escaping () -> Void) -> Disposable? {
         return add(observer: Observer(interrupted: interrupted))
     }
     
     /// Maps each value in the signal to a new value.
-    public func map<U>(transform: (Value) -> U) -> Signal<U, Error> {
+    public func map<U>(transform: @escaping (Value) -> U) -> Signal<U, ErrorType> {
         return Signal { observer in
             return self.on { event -> Void in
                 observer.sendEvent(event.map(transform))
@@ -253,7 +253,7 @@ extension SignalType {
     }
     
     /// Maps errors in the signal to a new error.
-    public func mapError<F>(transform: (Error) -> F) -> Signal<Value, F> {
+    public func mapError<F>(transform: @escaping (Error) -> F) -> Signal<Value, F> {
         return Signal { observer in
             return self.on { event -> Void in
                 observer.sendEvent(event.mapError(transform))
@@ -262,9 +262,9 @@ extension SignalType {
     }
     
     /// Preserves only the values of the signal that pass the given predicate.
-    public func filter(predicate: (Value) -> Bool) -> Signal<Value, Error> {
+    public func filter(predicate: @escaping (Value) -> Bool) -> Signal<Value, ErrorType> {
         return Signal { observer in
-            return self.on { (event: Event<Value, Error>) -> Void in
+            return self.on { (event: Event<Value, ErrorType>) -> Void in
                 guard let value = event.value else {
                     observer.sendEvent(event)
                     return
@@ -278,7 +278,7 @@ extension SignalType {
     }
     
     /// Aggregate values into a single combined value. Mirrors the Swift Collection
-    public func reduce<T>(initial: T, _ combine: (T, Value) -> T) -> Signal<T, Error> {
+    public func reduce<T>(initial: T, _ combine: @escaping (T, Value) -> T) -> Signal<T, ErrorType> {
         return Signal { observer in
             var accumulator = initial
             return self.on { event in

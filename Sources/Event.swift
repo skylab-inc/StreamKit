@@ -12,14 +12,14 @@ import Foundation
 ///
 /// Signals must conform to the grammar:
 /// `Next* (Failed | Completed | Interrupted)?`
-public enum Event<Value, Error: ErrorProtocol> {
+public enum Event<Value, ErrorType: Error> {
     
     /// A value provided by the signal.
     case Next(Value)
     
     /// The signal terminated because of an error. No further events will be
     /// received.
-    case Failed(Error)
+    case Failed(ErrorType)
     
     /// The signal successfully terminated. No further events will be received.
     case Completed
@@ -42,7 +42,7 @@ public enum Event<Value, Error: ErrorProtocol> {
     }
     
     /// Lifts the given function over the event's value.
-    public func map<U>(_ f: (Value) -> U) -> Event<U, Error> {
+    public func map<U>(_ f: (Value) -> U) -> Event<U, ErrorType> {
         switch self {
         case let .Next(value):
             return .Next(f(value))
@@ -59,7 +59,7 @@ public enum Event<Value, Error: ErrorProtocol> {
     }
     
     /// Lifts the given function over the event's error.
-    public func mapError<F>(_ f: (Error) -> F) -> Event<Value, F> {
+    public func mapError<F>(_ f: (ErrorType) -> F) -> Event<Value, F> {
         switch self {
         case let .Next(value):
             return .Next(value)
@@ -94,7 +94,7 @@ public enum Event<Value, Error: ErrorProtocol> {
     }
 }
 
-public func == <Value: Equatable, Error: Equatable> (lhs: Event<Value, Error>, rhs: Event<Value, Error>) -> Bool {
+public func == <Value: Equatable, ErrorType: Equatable> (lhs: Event<Value, ErrorType>, rhs: Event<Value, ErrorType>) -> Bool {
     switch (lhs, rhs) {
     case let (.Next(left), .Next(right)):
         return left == right

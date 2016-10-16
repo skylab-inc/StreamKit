@@ -10,20 +10,20 @@ import Foundation
 
 /// An Observer is a simple wrapper around a function which can receive Events
 /// (typically from a Signal).
-public struct Observer<Value, Error: ErrorProtocol> {
+public struct Observer<Value, ErrorType: Error> {
     
-    public typealias Action = (Event<Value, Error>) -> Void
+    public typealias Action = (Event<Value, ErrorType>) -> Void
     
     public let action: Action
     
-    public init(_ action: Action) {
+    public init(_ action: @escaping Action) {
         self.action = action
     }
     
     /// Creates an Observer with an action which calls each of the provided 
     /// callbacks
     public init(
-        failed: ((Error) -> Void)? = nil,
+        failed: ((ErrorType) -> Void)? = nil,
         completed: (() -> Void)? = nil,
         interrupted: (() -> Void)? = nil,
         next: ((Value) -> Void)? = nil)
@@ -46,7 +46,7 @@ public struct Observer<Value, Error: ErrorProtocol> {
     }
     
     
-    public func sendEvent(_ event: Event<Value, Error>) {
+    public func sendEvent(_ event: Event<Value, ErrorType>) {
         action(event)
     }
     
@@ -56,7 +56,7 @@ public struct Observer<Value, Error: ErrorProtocol> {
     }
     
     /// Puts an `Failed` event into the given observer.
-    public func sendFailed(_ error: Error) {
+    public func sendFailed(_ error: ErrorType) {
         action(.Failed(error))
     }
     
