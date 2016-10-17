@@ -15,6 +15,8 @@ public final class ColdSignal<Value, ErrorType: Error>: ColdSignalType, Internal
     
     private var cancelDisposable: Disposable?
     
+    private var handlerDisposable: Disposable?
+    
     private var started = false
     
     /// Initializes a ColdSignal that will invoke the given closure at the
@@ -39,31 +41,28 @@ public final class ColdSignal<Value, ErrorType: Error>: ColdSignalType, Internal
     /// with the signal and immediately send an `Interrupted` event.
     
     public func start() {
-        let observer = Observer<Value, ErrorType> { event in
-            if case .Interrupted = event {
-                
-                self.interrupt()
-                
-            } else {
+        if !started {
+            started = true
+            
+            let observer = Observer<Value, ErrorType> { event in
+                // Pass event downstream
                 self.observers.forEach { (observer) in
                     observer.action(event)
                 }
                 
+                // If event is terminating dispose of the handlerDisposable.
                 if event.isTerminating {
-                    self.stop()
+                    self.handlerDisposable?.dispose()
                 }
             }
-        }
-        
-        if !started {
-            started = true
-            let handlerDisposable = startHandler(observer)
+            
+            handlerDisposable = startHandler(observer)
             
             // The cancel disposable should send interrupted and then dispose of the 
             // disposable produced by the startHandler.
-            cancelDisposable = ActionDisposable {
+            cancelDisposable = ActionDisposable { [weak self] in
                 observer.sendInterrupted()
-                handlerDisposable?.dispose()
+                self?.handlerDisposable?.dispose()
             }
         }
     }

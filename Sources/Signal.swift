@@ -24,18 +24,12 @@ public final class Signal<Value, ErrorType: Error>: SignalType, InternalSignalTy
         let generatorDisposable = SerialDisposable()
 
         let inputObserver = Observer<Value, ErrorType> { event in
-            if case .Interrupted = event {
-                                
-                self.interrupt()
-                
-            } else {
-                self.observers.forEach { (observer) in
-                    observer.action(event)
-                }
-                
-                if event.isTerminating {
-                    generatorDisposable.dispose()
-                }
+            self.observers.forEach { (observer) in
+                observer.action(event)
+            }
+            
+            if event.isTerminating {
+                generatorDisposable.dispose()
             }
         }
         
