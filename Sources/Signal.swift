@@ -238,7 +238,7 @@ extension SignalType {
     }
     
     /// Maps each value in the signal to a new value.
-    public func map<U>(transform: @escaping (Value) -> U) -> Signal<U, ErrorType> {
+    public func map<U>(_ transform: @escaping (Value) -> U) -> Signal<U, ErrorType> {
         return Signal { observer in
             return self.on { event -> Void in
                 observer.sendEvent(event.map(transform))
@@ -247,7 +247,7 @@ extension SignalType {
     }
     
     /// Maps errors in the signal to a new error.
-    public func mapError<F>(transform: @escaping (ErrorType) -> F) -> Signal<Value, F> {
+    public func mapError<F>(_ transform: @escaping (ErrorType) -> F) -> Signal<Value, F> {
         return Signal { observer in
             return self.on { event -> Void in
                 observer.sendEvent(event.mapError(transform))
@@ -256,7 +256,7 @@ extension SignalType {
     }
     
     /// Preserves only the values of the signal that pass the given predicate.
-    public func filter(predicate: @escaping (Value) -> Bool) -> Signal<Value, ErrorType> {
+    public func filter(_ predicate: @escaping (Value) -> Bool) -> Signal<Value, ErrorType> {
         return Signal { observer in
             return self.on { (event: Event<Value, ErrorType>) -> Void in
                 guard let value = event.value else {
