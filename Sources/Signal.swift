@@ -197,7 +197,7 @@ public extension SignalType {
     /// invocations.
     @discardableResult
     public func on(action: @escaping Observer<Value, ErrorType>.Action) -> Disposable? {
-        return signal.add(observer: Observer(action))
+        return self.add(observer: Observer(action))
     }
     
     /// Observes the Signal by invoking the given callback when `next` events are
@@ -208,7 +208,7 @@ public extension SignalType {
     /// itself.
     @discardableResult
     public func onNext(next: @escaping (Value) -> Void) -> Disposable? {
-        return signal.add(observer: Observer(next: next))
+        return self.add(observer: Observer(next: next))
     }
     
     /// Observes the Signal by invoking the given callback when a `completed` event is
@@ -219,7 +219,7 @@ public extension SignalType {
     /// itself.
     @discardableResult
     public func onCompleted(completed: @escaping () -> Void) -> Disposable? {
-        return signal.add(observer: Observer(completed: completed))
+        return self.add(observer: Observer(completed: completed))
     }
     
     /// Observes the Signal by invoking the given callback when a `failed` event is
@@ -230,7 +230,7 @@ public extension SignalType {
     /// itself.
     @discardableResult
     public func onFailed(error: @escaping (ErrorType) -> Void) -> Disposable? {
-        return signal.add(observer: Observer(failed: error))
+        return self.add(observer: Observer(failed: error))
     }
     
     /// Observes the Signal by invoking the given callback when an `interrupted` event is
@@ -242,7 +242,7 @@ public extension SignalType {
     /// itself.
     @discardableResult
     public func onInterrupted(interrupted: @escaping () -> Void) -> Disposable? {
-        return signal.add(observer: Observer(interrupted: interrupted))
+        return self.add(observer: Observer(interrupted: interrupted))
     }
     
 }
