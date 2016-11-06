@@ -15,10 +15,6 @@ public final class ColdSignal<Value, ErrorType: Error>: ColdSignalType, Internal
         return self
     }
     
-    public var signal: Signal<Value, ErrorType> {
-        return self.identity
-    }
-    
     internal let startHandler: (Observer<Value, ErrorType>) -> Disposable?
     
     private var cancelDisposable: Disposable?
@@ -123,6 +119,10 @@ public protocol ColdSignalType: SignalType {
 }
 
 public extension ColdSignalType {
+    
+    public var signal: Signal<Value, ErrorType> {
+        return self.identity
+    }
     
     /// Invokes the closure provided upon initialization, and passes in a newly
     /// created observer to which events can be sent.
