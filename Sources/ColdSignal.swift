@@ -122,7 +122,7 @@ public protocol ColdSignalType: SignalType {
     
 }
 
-extension ColdSignalType {
+public extension ColdSignalType {
     
     /// Invokes the closure provided upon initialization, and passes in a newly
     /// created observer to which events can be sent.
@@ -139,7 +139,7 @@ extension ColdSignalType {
 
 }
 
-extension ColdSignalType {
+public extension ColdSignalType {
     
     /// Creates a ColdSignal, adds exactly one observer, and then immediately
     /// invokes start on the ColdSignal.
@@ -199,7 +199,7 @@ extension ColdSignalType {
 
 }
 
-extension ColdSignalType {
+public extension ColdSignalType {
     
     /// Creates a new `ColdSignal` which will apply a unary operator directly to events
     /// produced by the `startHandler`.

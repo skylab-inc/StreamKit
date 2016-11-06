@@ -92,7 +92,7 @@ public protocol SpecialSignalGenerator {
     
 }
 
-extension SpecialSignalGenerator {
+public extension SpecialSignalGenerator {
     
     /// Creates a Signal that will immediately send one value
     /// then complete.
@@ -180,7 +180,7 @@ internal protocol InternalSignalType: SignalType {
     
 }
 
-extension InternalSignalType {
+internal extension InternalSignalType {
     
     /// Interrupts all observers and terminates the stream.
     func interrupt() {
@@ -191,7 +191,7 @@ extension InternalSignalType {
     
 }
 
-extension SignalType {
+public extension SignalType {
 
     /// Convenience override for add(observer:) to allow trailing-closure style
     /// invocations.
@@ -247,7 +247,7 @@ extension SignalType {
     
 }
 
-extension SignalType {
+public extension SignalType {
     
     public var identity: Signal<Value, ErrorType> {
         return self.map { $0 }
