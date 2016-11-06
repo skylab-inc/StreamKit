@@ -8,7 +8,11 @@
 
 import Foundation
 
-public final class ColdSignal<Value, ErrorType: Error>: ColdSignalType, InternalSignalType, SpecialSignalGenerator {
+public final class ColdSignal<T, E: Error>: ColdSignalType, InternalSignalType, SpecialSignalGenerator {
+    
+    public typealias Value = T
+    public typealias ErrorType = E
+    
     internal var observers = Bag<Observer<Value, ErrorType>>()
     
     public var coldSignal: ColdSignal {
@@ -77,20 +81,6 @@ public final class ColdSignal<Value, ErrorType: Error>: ColdSignalType, Internal
         started = false
     }
     
-    /// Adds an observer to the ColdSignal which observes any future events from the
-    /// ColdSignal. If the Signal has already terminated, the observer will immediately
-    /// receive an `Interrupted` event.
-    ///
-    /// Returns a Disposable which can be used to disconnect the observer. Disposing
-    /// of the Disposable will have no effect on the Signal itself.
-    @discardableResult
-    public func add(observer: Observer<Value, ErrorType>) -> Disposable? {
-        let token = self.observers.insert(value: observer)
-        return ActionDisposable {
-            self.observers.removeValueForToken(token: token)
-        }
-    }
-    
 }
 
 extension ColdSignal: CustomDebugStringConvertible {
@@ -121,7 +111,9 @@ public protocol ColdSignalType: SignalType {
 public extension ColdSignalType {
     
     public var signal: Signal<Value, ErrorType> {
-        return self.identity
+        return Signal { observer in
+            self.coldSignal.add(observer: observer)
+        }
     }
     
     /// Invokes the closure provided upon initialization, and passes in a newly
@@ -140,6 +132,20 @@ public extension ColdSignalType {
 }
 
 public extension ColdSignalType {
+    
+    /// Adds an observer to the ColdSignal which observes any future events from the
+    /// ColdSignal. If the Signal has already terminated, the observer will immediately
+    /// receive an `Interrupted` event.
+    ///
+    /// Returns a Disposable which can be used to disconnect the observer. Disposing
+    /// of the Disposable will have no effect on the Signal itself.
+    @discardableResult
+    public func add(observer: Observer<Value, ErrorType>) -> Disposable? {
+        let token = coldSignal.observers.insert(value: observer)
+        return ActionDisposable {
+            self.coldSignal.observers.removeValueForToken(token: token)
+        }
+    }
     
     /// Creates a ColdSignal, adds exactly one observer, and then immediately
     /// invokes start on the ColdSignal.

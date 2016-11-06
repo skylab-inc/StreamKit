@@ -40,21 +40,6 @@ public final class Signal<Value, ErrorType: Error>: SignalType, InternalSignalTy
         generatorDisposable.innerDisposable = generator(inputObserver)
     }
     
-    /// Adds an observer to the Signal which observes any future events from the Signal.
-    /// If the Signal has already terminated, the observer will immediately receive an
-    /// `Interrupted` event.
-    ///
-    /// Returns a Disposable which can be used to disconnect the observer. Disposing
-    /// of the Disposable will have no effect on the Signal itself.
-    @discardableResult
-    public func add(observer: Observer<Value, ErrorType>) -> Disposable? {
-        let token = observers.insert(value: observer)
-        return ActionDisposable { [weak self] in
-            self?.observers.removeValueForToken(token: token)
-        }
-    
-    }
-    
     /// Creates a Signal that will be controlled by sending events to the returned
     /// observer.
     ///
@@ -156,16 +141,13 @@ public extension SpecialSignalGenerator {
 }
 
 public protocol SignalType {
+    
     /// The type of values being sent on the signal.
     associatedtype Value
     
     /// The type of error that can occur on the signal. If errors aren't possible
     /// then `NoError` can be used.
     associatedtype ErrorType: Error
-    
-    /// Observes the Signal by sending any future events to the given observer.
-    @discardableResult
-    func add(observer: Observer<Value, ErrorType>) -> Disposable?
     
     /// The exposed raw signal that underlies the ColdSignalType
     var signal: Signal<Value, ErrorType> { get }
@@ -192,6 +174,21 @@ internal extension InternalSignalType {
 }
 
 public extension SignalType {
+    
+    /// Adds an observer to the Signal which observes any future events from the Signal.
+    /// If the Signal has already terminated, the observer will immediately receive an
+    /// `Interrupted` event.
+    ///
+    /// Returns a Disposable which can be used to disconnect the observer. Disposing
+    /// of the Disposable will have no effect on the Signal itself.
+    @discardableResult
+    public func add(observer: Observer<Value, ErrorType>) -> Disposable? {
+        let token = signal.observers.insert(value: observer)
+        return ActionDisposable {
+            self.signal.observers.removeValueForToken(token: token)
+        }
+        
+    }
 
     /// Convenience override for add(observer:) to allow trailing-closure style
     /// invocations.
