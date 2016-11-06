@@ -300,4 +300,14 @@ extension SignalType {
         }
     }
     
+    public func flatMap<U>(_ transform: @escaping (Value) -> U?) -> Signal<U, ErrorType> {
+        return Signal { observer in
+            return self.on { event -> Void in
+                if let e = event.flatMap(transform) {
+                    observer.sendEvent(e)
+                }
+            }
+        }
+    }
+    
 }

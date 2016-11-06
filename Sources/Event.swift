@@ -58,6 +58,26 @@ public enum Event<Value, ErrorType: Error> {
         }
     }
     
+    /// Lifts the given function over the event's value.
+    public func flatMap<U>(_ f: (Value) -> U?) -> Event<U, ErrorType>? {
+        switch self {
+        case let .Next(value):
+            if let nextValue = f(value) {
+                return .Next(nextValue)
+            }
+            return nil
+            
+        case let .Failed(error):
+            return .Failed(error)
+            
+        case .Completed:
+            return .Completed
+            
+        case .Interrupted:
+            return .Interrupted
+        }
+    }
+    
     /// Lifts the given function over the event's error.
     public func mapError<F>(_ f: (ErrorType) -> F) -> Event<Value, F> {
         switch self {

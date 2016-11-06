@@ -234,5 +234,9 @@ extension ColdSignalType {
         return lift { $0.reduce(initial: initial, combine) }
     }
     
+    public func flatMap<U>(_ transform: @escaping (Value) -> U?) -> ColdSignal<U, ErrorType> {
+        return lift { $0.flatMap(transform) }
+    }
+    
 }
 
