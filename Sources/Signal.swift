@@ -12,6 +12,10 @@ public final class Signal<Value, ErrorType: Error>: SignalType, InternalSignalTy
     
     internal var observers = Bag<Observer<Value, ErrorType>>()
     
+    public var signal: Signal<Value, ErrorType> {
+        return self
+    }
+    
     /// Initializes a Signal that will immediately invoke the given generator,
     /// then forward events sent to the given observer.
     ///
@@ -42,6 +46,7 @@ public final class Signal<Value, ErrorType: Error>: SignalType, InternalSignalTy
     ///
     /// Returns a Disposable which can be used to disconnect the observer. Disposing
     /// of the Disposable will have no effect on the Signal itself.
+    @discardableResult
     public func add(observer: Observer<Value, ErrorType>) -> Disposable? {
         let token = observers.insert(value: observer)
         return ActionDisposable { [weak self] in
@@ -159,8 +164,11 @@ public protocol SignalType {
     associatedtype ErrorType: Error
     
     /// Observes the Signal by sending any future events to the given observer.
+    @discardableResult
     func add(observer: Observer<Value, ErrorType>) -> Disposable?
     
+    /// The exposed raw signal that underlies the ColdSignalType
+    var signal: Signal<Value, ErrorType> { get }
 
 }
 
@@ -189,7 +197,7 @@ extension SignalType {
     /// invocations.
     @discardableResult
     public func on(action: @escaping Observer<Value, ErrorType>.Action) -> Disposable? {
-        return add(observer: Observer(action))
+        return signal.add(observer: Observer(action))
     }
     
     /// Observes the Signal by invoking the given callback when `next` events are
@@ -200,7 +208,7 @@ extension SignalType {
     /// itself.
     @discardableResult
     public func onNext(next: @escaping (Value) -> Void) -> Disposable? {
-        return add(observer: Observer(next: next))
+        return signal.add(observer: Observer(next: next))
     }
     
     /// Observes the Signal by invoking the given callback when a `completed` event is
@@ -211,7 +219,7 @@ extension SignalType {
     /// itself.
     @discardableResult
     public func onCompleted(completed: @escaping () -> Void) -> Disposable? {
-        return add(observer: Observer(completed: completed))
+        return signal.add(observer: Observer(completed: completed))
     }
     
     /// Observes the Signal by invoking the given callback when a `failed` event is
@@ -222,7 +230,7 @@ extension SignalType {
     /// itself.
     @discardableResult
     public func onFailed(error: @escaping (ErrorType) -> Void) -> Disposable? {
-        return add(observer: Observer(failed: error))
+        return signal.add(observer: Observer(failed: error))
     }
     
     /// Observes the Signal by invoking the given callback when an `interrupted` event is
@@ -234,7 +242,15 @@ extension SignalType {
     /// itself.
     @discardableResult
     public func onInterrupted(interrupted: @escaping () -> Void) -> Disposable? {
-        return add(observer: Observer(interrupted: interrupted))
+        return signal.add(observer: Observer(interrupted: interrupted))
+    }
+    
+}
+
+extension SignalType {
+    
+    public var identity: Signal<Value, ErrorType> {
+        return self.map { $0 }
     }
     
     /// Maps each value in the signal to a new value.

@@ -11,7 +11,15 @@ import Foundation
 public final class ColdSignal<Value, ErrorType: Error>: ColdSignalType, InternalSignalType, SpecialSignalGenerator {
     internal var observers = Bag<Observer<Value, ErrorType>>()
     
-    private let startHandler: (Observer<Value, ErrorType>) -> Disposable?
+    public var coldSignal: ColdSignal {
+        return self
+    }
+    
+    public var signal: Signal<Value, ErrorType> {
+        return self.identity
+    }
+    
+    internal let startHandler: (Observer<Value, ErrorType>) -> Disposable?
     
     private var cancelDisposable: Disposable?
     
@@ -40,6 +48,7 @@ public final class ColdSignal<Value, ErrorType: Error>: ColdSignalType, Internal
     /// Returns a Disposable which can be used to interrupt the work associated
     /// with the signal and immediately send an `Interrupted` event.
     
+    @discardableResult
     public func start() {
         if !started {
             started = true
@@ -78,6 +87,7 @@ public final class ColdSignal<Value, ErrorType: Error>: ColdSignalType, Internal
     ///
     /// Returns a Disposable which can be used to disconnect the observer. Disposing
     /// of the Disposable will have no effect on the Signal itself.
+    @discardableResult
     public func add(observer: Observer<Value, ErrorType>) -> Disposable? {
         let token = self.observers.insert(value: observer)
         return ActionDisposable {
@@ -98,6 +108,9 @@ extension ColdSignal: CustomDebugStringConvertible {
 
 public protocol ColdSignalType: SignalType {
     
+    /// The exposed raw signal that underlies the ColdSignalType
+    var coldSignal: ColdSignal<Value, ErrorType> { get }
+    
     /// Invokes the closure provided upon initialization, and passes in a newly
     /// created observer to which events can be sent.
     func start()
@@ -111,14 +124,31 @@ public protocol ColdSignalType: SignalType {
 
 extension ColdSignalType {
     
+    /// Invokes the closure provided upon initialization, and passes in a newly
+    /// created observer to which events can be sent.
+    func start() {
+        coldSignal.start()
+    }
+    
+    /// Stops the ColdSignal by sending an interrupt to all of it's
+    /// observers and then invoking the disposable returned by the closure
+    /// that was provided upon initialization.
+    func stop() {
+        coldSignal.stop()
+    }
+
+}
+
+extension ColdSignalType {
+    
     /// Creates a ColdSignal, adds exactly one observer, and then immediately
     /// invokes start on the ColdSignal.
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
     public func start(with observer: Observer<Value, ErrorType>) -> Disposable? {
-        let disposable = add(observer: observer)
-        start()
+        let disposable = coldSignal.add(observer: observer)
+        self.coldSignal.start()
         return disposable
     }
 
@@ -168,3 +198,42 @@ extension ColdSignalType {
     }
 
 }
+
+extension ColdSignalType {
+    
+    public func lift<U, F>(_ transform: @escaping (Signal<Value, ErrorType>) -> Signal<U, F>) -> ColdSignal<U, F> {
+        return ColdSignal { observer in
+            let (pipeSignal, pipeObserver) = Signal<Value, ErrorType>.pipe()
+            transform(pipeSignal).add(observer: observer)
+            return self.coldSignal.startHandler(pipeObserver)
+        }
+    }
+    
+    /// Maps each value in the signal to a new value. 
+    ///
+    /// Creates a new `ColdSignal` which will apply the transform directly to events
+    /// produced by the `startHandler`.
+    ///
+    /// The new `ColdSignal` is in no way related to the source `ColdSignal` except
+    /// that they share a reference to the same `startHandler`.
+    public func map<U>(_ transform: @escaping (Value) -> U) -> ColdSignal<U, ErrorType> {
+        return lift { $0.map(transform) }
+    }
+    
+    /// Maps errors in the signal to a new error.
+    public func mapError<F>(_ transform: @escaping (ErrorType) -> F) -> ColdSignal<Value, F> {
+        return lift { $0.mapError(transform) }
+    }
+    
+    /// Preserves only the values of the signal that pass the given predicate.
+    public func filter(_ predicate: @escaping (Value) -> Bool) -> ColdSignal<Value, ErrorType> {
+        return lift { $0.filter(predicate) }
+    }
+    
+    /// Aggregate values into a single combined value. Mirrors the Swift Collection
+    public func reduce<T>(initial: T, _ combine: @escaping (T, Value) -> T) -> ColdSignal<T, ErrorType> {
+        return lift { $0.reduce(initial: initial, combine) }
+    }
+    
+}
+
