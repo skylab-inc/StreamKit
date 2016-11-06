@@ -201,6 +201,11 @@ extension ColdSignalType {
 
 extension ColdSignalType {
     
+    /// Creates a new `ColdSignal` which will apply a unary operator directly to events
+    /// produced by the `startHandler`.
+    ///
+    /// The new `ColdSignal` is in no way related to the source `ColdSignal` except
+    /// that they share a reference to the same `startHandler`.
     public func lift<U, F>(_ transform: @escaping (Signal<Value, ErrorType>) -> Signal<U, F>) -> ColdSignal<U, F> {
         return ColdSignal { observer in
             let (pipeSignal, pipeObserver) = Signal<Value, ErrorType>.pipe()
@@ -209,13 +214,7 @@ extension ColdSignalType {
         }
     }
     
-    /// Maps each value in the signal to a new value. 
-    ///
-    /// Creates a new `ColdSignal` which will apply the transform directly to events
-    /// produced by the `startHandler`.
-    ///
-    /// The new `ColdSignal` is in no way related to the source `ColdSignal` except
-    /// that they share a reference to the same `startHandler`.
+    /// Maps each value in the signal to a new value.
     public func map<U>(_ transform: @escaping (Value) -> U) -> ColdSignal<U, ErrorType> {
         return lift { $0.map(transform) }
     }
