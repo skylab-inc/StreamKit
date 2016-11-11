@@ -284,6 +284,36 @@ public extension SignalType {
         }
     }
     
+    /// Splits the signal into two signals. The first signal in the tuple matches the
+    /// predicate, the second signal does not match the predicate
+    public func partition(_ predicate: @escaping (Value) -> Bool) -> (Signal<Value, ErrorType>, Signal<Value, ErrorType>) {
+        let left = Signal<Value, ErrorType> { observer in
+            return self.on { (event: Event<Value, ErrorType>) -> Void in
+                guard let value = event.value else {
+                    observer.sendEvent(event)
+                    return
+                }
+                
+                if predicate(value) {
+                    observer.sendNext(value)
+                }
+            }
+        }
+        let right = Signal<Value, ErrorType> { observer in
+            return self.on { (event: Event<Value, ErrorType>) -> Void in
+                guard let value = event.value else {
+                    observer.sendEvent(event)
+                    return
+                }
+                
+                if !predicate(value) {
+                    observer.sendNext(value)
+                }
+            }
+        }
+        return (left, right)
+    }
+    
     /// Aggregate values into a single combined value. Mirrors the Swift Collection
     public func reduce<T>(initial: T, _ combine: @escaping (T, Value) -> T) -> Signal<T, ErrorType> {
         return Signal { observer in

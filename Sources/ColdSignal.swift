@@ -220,6 +220,22 @@ public extension ColdSignalType {
         }
     }
     
+    public func lift<U, F>(_ transform: @escaping (Signal<Value, ErrorType>) -> (Signal<U, F>, Signal<U, F>))
+        -> (ColdSignal<U, F>, ColdSignal<U, F>)
+    {
+        let (pipeSignal, pipeObserver) = Signal<Value, ErrorType>.pipe()
+        let (left, right) = transform(pipeSignal)
+        let coldLeft = ColdSignal<U, F> { observer in
+            left.add(observer: observer)
+            return self.coldSignal.startHandler(pipeObserver)
+        }
+        let coldRight = ColdSignal<U, F> { observer in
+            right.add(observer: observer)
+            return self.coldSignal.startHandler(pipeObserver)
+        }
+        return (coldLeft, coldRight)
+    }
+    
     /// Maps each value in the signal to a new value.
     public func map<U>(_ transform: @escaping (Value) -> U) -> ColdSignal<U, ErrorType> {
         return lift { $0.map(transform) }
@@ -233,6 +249,13 @@ public extension ColdSignalType {
     /// Preserves only the values of the signal that pass the given predicate.
     public func filter(_ predicate: @escaping (Value) -> Bool) -> ColdSignal<Value, ErrorType> {
         return lift { $0.filter(predicate) }
+    }
+    
+    /// Splits the signal into two signals. The first signal in the tuple matches the
+    /// predicate, the second signal does not match the predicate
+    public func partition(_ predicate: @escaping (Value) -> Bool)
+        -> (ColdSignal<Value, ErrorType>, ColdSignal<Value, ErrorType>) {
+        return lift { $0.partition(predicate) }
     }
     
     /// Aggregate values into a single combined value. Mirrors the Swift Collection
