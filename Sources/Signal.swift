@@ -287,28 +287,19 @@ public extension SignalType {
     /// Splits the signal into two signals. The first signal in the tuple matches the
     /// predicate, the second signal does not match the predicate
     public func partition(_ predicate: @escaping (Value) -> Bool) -> (Signal<Value, ErrorType>, Signal<Value, ErrorType>) {
-        let left = Signal<Value, ErrorType> { observer in
-            return self.on { (event: Event<Value, ErrorType>) -> Void in
-                guard let value = event.value else {
-                    observer.sendEvent(event)
-                    return
-                }
-                
-                if predicate(value) {
-                    observer.sendNext(value)
-                }
+        let (left, leftObserver) = Signal<Value, ErrorType>.pipe()
+        let (right, rightObserver) = Signal<Value, ErrorType>.pipe()
+        self.on { (event: Event<Value, ErrorType>) -> Void in
+            guard let value = event.value else {
+                leftObserver.sendEvent(event)
+                rightObserver.sendEvent(event)
+                return
             }
-        }
-        let right = Signal<Value, ErrorType> { observer in
-            return self.on { (event: Event<Value, ErrorType>) -> Void in
-                guard let value = event.value else {
-                    observer.sendEvent(event)
-                    return
-                }
-                
-                if !predicate(value) {
-                    observer.sendNext(value)
-                }
+            
+            if predicate(value) {
+                leftObserver.sendNext(value)
+            } else {
+                rightObserver.sendNext(value)
             }
         }
         return (left, right)
