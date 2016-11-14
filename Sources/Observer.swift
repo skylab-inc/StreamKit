@@ -8,65 +8,118 @@
 
 import Foundation
 
-/// An Observer is a simple wrapper around a function which can receive Events
-/// (typically from a Signal).
-public struct Observer<Value, ErrorType: Error> {
+
+/// A CiruitBreaker optionally holds a strong reference to either a
+/// `Signal` or a `ColdSignal` until a terminating event is
+/// received. At such time, it delivers the event and then 
+/// removes its reference. In so doing, it "breaks the circuit"
+/// between the signal, the handler, and the input observer.
+/// This allows the downstream signal to be released.
+class CircuitBreaker<Value, Error: Swift.Error>  {
+
+    private var signal: Signal<Value, Error>? = nil
+    private var coldSignal: ColdSignal<Value, Error>? = nil
+    fileprivate var action: Observer<Value, Error>.Action! = nil
     
-    public typealias Action = (Event<Value, ErrorType>) -> Void
+    /// Holds a strong reference to a `Signal` until a 
+    /// terminating event is received.
+    init(holding signal: Signal<Value, Error>?) {
+        self.signal = signal
+        self.action = { [weak self] event in
+            // If event is terminating dispose of the handlerDisposable.
+            self?.signal?.observers.forEach { observer in
+                observer.send(event)
+            }
+            
+            if event.isTerminating {
+                self?.signal = nil
+            }
+        }
+    }
     
-    public let action: Action
+    /// Holds a strong reference to a `ColdSignal` until a
+    /// terminating event is received.
+    init(holding coldSignal: ColdSignal<Value, Error>?) {
+        self.coldSignal = coldSignal
+        self.action = { [weak self] event in
+            // If event is terminating dispose of the handlerDisposable.
+            self?.coldSignal?.observers.forEach { observer in
+                observer.send(event)
+            }
+            
+            if event.isTerminating {
+                self?.coldSignal = nil
+            }
+        }
+    }
+    
+    fileprivate init(with action: @escaping (Event<Value, Error>) -> Void) {
+        self.action = action
+    }
+    
+}
+
+
+public struct Observer<Value, Error: Swift.Error> {
+    
+    public typealias Action = (Event<Value, Error>) -> Void
+    let breaker: CircuitBreaker<Value, Error>
+    
+    init(with breaker: CircuitBreaker<Value, Error>) {
+        self.breaker = breaker
+    }
     
     public init(_ action: @escaping Action) {
-        self.action = action
+        self.breaker = CircuitBreaker(with: action)
     }
     
     /// Creates an Observer with an action which calls each of the provided 
     /// callbacks
     public init(
-        failed: ((ErrorType) -> Void)? = nil,
+        failed: ((Error) -> Void)? = nil,
         completed: (() -> Void)? = nil,
         interrupted: (() -> Void)? = nil,
         next: ((Value) -> Void)? = nil)
     {
         self.init { event in
             switch event {
-            case let .Next(value):
+            case let .next(value):
                 next?(value)
                 
-            case let .Failed(error):
+            case let .failed(error):
                 failed?(error)
                 
-            case .Completed:
+            case .completed:
                 completed?()
                 
-            case .Interrupted:
+            case .interrupted:
                 interrupted?()
             }
         }
     }
     
-    
-    public func sendEvent(_ event: Event<Value, ErrorType>) {
-        action(event)
+    /// Puts any `Event` into the the given observer.
+    public func send(_ event: Event<Value, Error>) {
+        breaker.action(event)
     }
     
     /// Puts a `Next` event into the given observer.
     public func sendNext(_ value: Value) {
-        action(.Next(value))
+        send(.next(value))
     }
     
     /// Puts an `Failed` event into the given observer.
-    public func sendFailed(_ error: ErrorType) {
-        action(.Failed(error))
+    public func sendFailed(_ error: Error) {
+        send(.failed(error))
     }
     
     /// Puts a `Completed` event into the given observer.
     public func sendCompleted() {
-        action(.Completed)
+        send(.completed)
     }
     
     /// Puts a `Interrupted` event into the given observer.
     public func sendInterrupted() {
-        action(.Interrupted)
+        send(.interrupted)
     }
 }

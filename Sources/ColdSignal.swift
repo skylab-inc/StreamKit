@@ -8,22 +8,20 @@
 
 import Foundation
 
-public final class ColdSignal<T, E: Error>: ColdSignalType, InternalSignalType, SpecialSignalGenerator {
+public final class ColdSignal<V, E: Swift.Error>: ColdSignalType, InternalSignalType, SpecialSignalGenerator {
     
-    public typealias Value = T
-    public typealias ErrorType = E
+    public typealias Value = V
+    public typealias Error = E
     
-    internal var observers = Bag<Observer<Value, ErrorType>>()
+    internal var observers = Bag<Observer<Value, Error>>()
     
     public var coldSignal: ColdSignal {
         return self
     }
     
-    internal let startHandler: (Observer<Value, ErrorType>) -> Disposable?
+    internal let startHandler: (Observer<Value, Error>) -> Disposable?
     
     private var cancelDisposable: Disposable?
-    
-    private var handlerDisposable: Disposable?
     
     private var started = false
     
@@ -38,7 +36,7 @@ public final class ColdSignal<T, E: Error>: ColdSignalType, InternalSignalType, 
     /// 
     /// Invoking `start()` will have no effect until the signal is stopped. After
     /// `stop()` is called this process may be repeated.
-    public init(_ generator: @escaping (Observer<Value, ErrorType>) -> Disposable?) {
+    public init(_ generator: @escaping (Observer<Value, Error>) -> Disposable?) {
         self.startHandler = generator
     }
     
@@ -47,31 +45,19 @@ public final class ColdSignal<T, E: Error>: ColdSignalType, InternalSignalType, 
     ///
     /// Returns a Disposable which can be used to interrupt the work associated
     /// with the signal and immediately send an `Interrupted` event.
-    
     @discardableResult
     public func start() {
         if !started {
             started = true
             
-            let observer = Observer<Value, ErrorType> { event in
-                // Pass event downstream
-                self.observers.forEach { (observer) in
-                    observer.action(event)
-                }
-                
-                // If event is terminating dispose of the handlerDisposable.
-                if event.isTerminating {
-                    self.handlerDisposable?.dispose()
-                }
-            }
-            
-            handlerDisposable = startHandler(observer)
+            let observer = Observer(with: CircuitBreaker(holding: self))
+            let handlerDisposable = startHandler(observer)
             
             // The cancel disposable should send interrupted and then dispose of the 
             // disposable produced by the startHandler.
-            cancelDisposable = ActionDisposable { [weak self] in
+            cancelDisposable = ActionDisposable {
                 observer.sendInterrupted()
-                self?.handlerDisposable?.dispose()
+                handlerDisposable?.dispose()
             }
         }
     }
@@ -95,7 +81,7 @@ extension ColdSignal: CustomDebugStringConvertible {
 public protocol ColdSignalType: SignalType {
     
     /// The exposed raw signal that underlies the ColdSignalType
-    var coldSignal: ColdSignal<Value, ErrorType> { get }
+    var coldSignal: ColdSignal<Value, Error> { get }
     
     /// Invokes the closure provided upon initialization, and passes in a newly
     /// created observer to which events can be sent.
@@ -110,7 +96,7 @@ public protocol ColdSignalType: SignalType {
 
 public extension ColdSignalType {
     
-    public var signal: Signal<Value, ErrorType> {
+    public var signal: Signal<Value, Error> {
         return Signal { observer in
             self.coldSignal.add(observer: observer)
         }
@@ -140,7 +126,7 @@ public extension ColdSignalType {
     /// Returns a Disposable which can be used to disconnect the observer. Disposing
     /// of the Disposable will have no effect on the Signal itself.
     @discardableResult
-    public func add(observer: Observer<Value, ErrorType>) -> Disposable? {
+    public func add(observer: Observer<Value, Error>) -> Disposable? {
         let token = coldSignal.observers.insert(value: observer)
         return ActionDisposable {
             self.coldSignal.observers.removeValueForToken(token: token)
@@ -152,7 +138,7 @@ public extension ColdSignalType {
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
-    public func start(with observer: Observer<Value, ErrorType>) -> Disposable? {
+    public func start(with observer: Observer<Value, Error>) -> Disposable? {
         let disposable = coldSignal.add(observer: observer)
         self.coldSignal.start()
         return disposable
@@ -163,7 +149,7 @@ public extension ColdSignalType {
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
-    public func start(_ observerAction: @escaping Observer<Value, ErrorType>.Action) -> Disposable? {
+    public func start(_ observerAction: @escaping Observer<Value, Error>.Action) -> Disposable? {
         return start(with: Observer(observerAction))
     }
     
@@ -190,7 +176,7 @@ public extension ColdSignalType {
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
-    public func startWithFailed(failed: @escaping (ErrorType) -> Void) -> Disposable? {
+    public func startWithFailed(failed: @escaping (Error) -> Void) -> Disposable? {
         return start(with: Observer(failed: failed))
     }
     
@@ -212,18 +198,18 @@ public extension ColdSignalType {
     ///
     /// The new `ColdSignal` is in no way related to the source `ColdSignal` except
     /// that they share a reference to the same `startHandler`.
-    public func lift<U, F>(_ transform: @escaping (Signal<Value, ErrorType>) -> Signal<U, F>) -> ColdSignal<U, F> {
+    public func lift<U, F>(_ transform: @escaping (Signal<Value, Error>) -> Signal<U, F>) -> ColdSignal<U, F> {
         return ColdSignal { observer in
-            let (pipeSignal, pipeObserver) = Signal<Value, ErrorType>.pipe()
+            let (pipeSignal, pipeObserver) = Signal<Value, Error>.pipe()
             transform(pipeSignal).add(observer: observer)
             return self.coldSignal.startHandler(pipeObserver)
         }
     }
     
-    public func lift<U, F>(_ transform: @escaping (Signal<Value, ErrorType>) -> (Signal<U, F>, Signal<U, F>))
+    public func lift<U, F>(_ transform: @escaping (Signal<Value, Error>) -> (Signal<U, F>, Signal<U, F>))
         -> (ColdSignal<U, F>, ColdSignal<U, F>)
     {
-        let (pipeSignal, pipeObserver) = Signal<Value, ErrorType>.pipe()
+        let (pipeSignal, pipeObserver) = Signal<Value, Error>.pipe()
         let (left, right) = transform(pipeSignal)
         let coldLeft = ColdSignal<U, F> { observer in
             left.add(observer: observer)
@@ -237,33 +223,33 @@ public extension ColdSignalType {
     }
     
     /// Maps each value in the signal to a new value.
-    public func map<U>(_ transform: @escaping (Value) -> U) -> ColdSignal<U, ErrorType> {
+    public func map<U>(_ transform: @escaping (Value) -> U) -> ColdSignal<U, Error> {
         return lift { $0.map(transform) }
     }
     
     /// Maps errors in the signal to a new error.
-    public func mapError<F>(_ transform: @escaping (ErrorType) -> F) -> ColdSignal<Value, F> {
+    public func mapError<F>(_ transform: @escaping (Error) -> F) -> ColdSignal<Value, F> {
         return lift { $0.mapError(transform) }
     }
     
     /// Preserves only the values of the signal that pass the given predicate.
-    public func filter(_ predicate: @escaping (Value) -> Bool) -> ColdSignal<Value, ErrorType> {
+    public func filter(_ predicate: @escaping (Value) -> Bool) -> ColdSignal<Value, Error> {
         return lift { $0.filter(predicate) }
     }
     
     /// Splits the signal into two signals. The first signal in the tuple matches the
     /// predicate, the second signal does not match the predicate
     public func partition(_ predicate: @escaping (Value) -> Bool)
-        -> (ColdSignal<Value, ErrorType>, ColdSignal<Value, ErrorType>) {
+        -> (ColdSignal<Value, Error>, ColdSignal<Value, Error>) {
         return lift { $0.partition(predicate) }
     }
     
     /// Aggregate values into a single combined value. Mirrors the Swift Collection
-    public func reduce<T>(initial: T, _ combine: @escaping (T, Value) -> T) -> ColdSignal<T, ErrorType> {
+    public func reduce<T>(initial: T, _ combine: @escaping (T, Value) -> T) -> ColdSignal<T, Error> {
         return lift { $0.reduce(initial: initial, combine) }
     }
     
-    public func flatMap<U>(_ transform: @escaping (Value) -> U?) -> ColdSignal<U, ErrorType> {
+    public func flatMap<U>(_ transform: @escaping (Value) -> U?) -> ColdSignal<U, Error> {
         return lift { $0.flatMap(transform) }
     }
     

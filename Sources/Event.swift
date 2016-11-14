@@ -11,93 +11,93 @@ import Foundation
 /// Represents a signal event.
 ///
 /// Signals must conform to the grammar:
-/// `Next* (Failed | Completed | Interrupted)?`
-public enum Event<Value, ErrorType: Error> {
+/// `next* (failed | completed | interrupted)?`
+public enum Event<Value, Error: Swift.Error> {
     
     /// A value provided by the signal.
-    case Next(Value)
+    case next(Value)
     
     /// The signal terminated because of an error. No further events will be
     /// received.
-    case Failed(ErrorType)
+    case failed(Error)
     
     /// The signal successfully terminated. No further events will be received.
-    case Completed
+    case completed
     
     /// Event production on the signal has been interrupted. No further events
     /// will be received.
-    case Interrupted
+    case interrupted
     
     
     /// Whether this event indicates signal termination (i.e., that no further
     /// events will be received).
     public var isTerminating: Bool {
         switch self {
-        case .Next:
+        case .next:
             return false
             
-        case .Failed, .Completed, .Interrupted:
+        case .failed, .completed, .interrupted:
             return true
         }
     }
     
     /// Lifts the given function over the event's value.
-    public func map<U>(_ f: (Value) -> U) -> Event<U, ErrorType> {
+    public func map<U>(_ f: (Value) -> U) -> Event<U, Error> {
         switch self {
-        case let .Next(value):
-            return .Next(f(value))
+        case let .next(value):
+            return .next(f(value))
             
-        case let .Failed(error):
-            return .Failed(error)
+        case let .failed(error):
+            return .failed(error)
             
-        case .Completed:
-            return .Completed
+        case .completed:
+            return .completed
             
-        case .Interrupted:
-            return .Interrupted
+        case .interrupted:
+            return .interrupted
         }
     }
     
     /// Lifts the given function over the event's value.
-    public func flatMap<U>(_ f: (Value) -> U?) -> Event<U, ErrorType>? {
+    public func flatMap<U>(_ f: (Value) -> U?) -> Event<U, Error>? {
         switch self {
-        case let .Next(value):
+        case let .next(value):
             if let nextValue = f(value) {
-                return .Next(nextValue)
+                return .next(nextValue)
             }
             return nil
             
-        case let .Failed(error):
-            return .Failed(error)
+        case let .failed(error):
+            return .failed(error)
             
-        case .Completed:
-            return .Completed
+        case .completed:
+            return .completed
             
-        case .Interrupted:
-            return .Interrupted
+        case .interrupted:
+            return .interrupted
         }
     }
     
     /// Lifts the given function over the event's error.
-    public func mapError<F>(_ f: (ErrorType) -> F) -> Event<Value, F> {
+    public func mapError<F>(_ f: (Error) -> F) -> Event<Value, F> {
         switch self {
-        case let .Next(value):
-            return .Next(value)
+        case let .next(value):
+            return .next(value)
             
-        case let .Failed(error):
-            return .Failed(f(error))
+        case let .failed(error):
+            return .failed(f(error))
             
-        case .Completed:
-            return .Completed
+        case .completed:
+            return .completed
             
-        case .Interrupted:
-            return .Interrupted
+        case .interrupted:
+            return .interrupted
         }
     }
     
     /// Unwraps the contained `Next` value.
     public var value: Value? {
-        if case let .Next(value) = self {
+        if case let .next(value) = self {
             return value
         } else {
             return nil
@@ -106,7 +106,7 @@ public enum Event<Value, ErrorType: Error> {
     
     /// Unwraps the contained `Error` value.
     public var error: Error? {
-        if case let .Failed(error) = self {
+        if case let .failed(error) = self {
             return error
         } else {
             return nil
@@ -114,18 +114,18 @@ public enum Event<Value, ErrorType: Error> {
     }
 }
 
-public func == <Value: Equatable, ErrorType: Equatable> (lhs: Event<Value, ErrorType>, rhs: Event<Value, ErrorType>) -> Bool {
+public func == <Value: Equatable, Error: Equatable> (lhs: Event<Value, Error>, rhs: Event<Value, Error>) -> Bool {
     switch (lhs, rhs) {
-    case let (.Next(left), .Next(right)):
+    case let (.next(left), .next(right)):
         return left == right
         
-    case let (.Failed(left), .Failed(right)):
+    case let (.failed(left), .failed(right)):
         return left == right
         
-    case (.Completed, .Completed):
+    case (.completed, .completed):
         return true
         
-    case (.Interrupted, .Interrupted):
+    case (.interrupted, .interrupted):
         return true
         
     default:
