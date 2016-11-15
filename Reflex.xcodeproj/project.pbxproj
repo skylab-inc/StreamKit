@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DC30FA8A1DDAFFED00C2CC7F /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC30FA891DDAFFED00C2CC7F /* Error.swift */; };
 		OBJ_26 /* Bag.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* Bag.swift */; };
 		OBJ_27 /* ColdSignal.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* ColdSignal.swift */; };
 		OBJ_28 /* Disposable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* Disposable.swift */; };
@@ -28,6 +29,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		DC30FA891DDAFFED00C2CC7F /* Error.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
 		OBJ_10 /* ColdSignal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColdSignal.swift; sourceTree = "<group>"; };
 		OBJ_11 /* Disposable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Disposable.swift; sourceTree = "<group>"; };
 		OBJ_12 /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
@@ -113,6 +115,7 @@
 				OBJ_12 /* Event.swift */,
 				OBJ_13 /* Observer.swift */,
 				OBJ_14 /* Signal.swift */,
+				DC30FA891DDAFFED00C2CC7F /* Error.swift */,
 			);
 			name = Reflex;
 			path = Sources;
@@ -190,6 +193,7 @@
 				OBJ_28 /* Disposable.swift in Sources */,
 				OBJ_29 /* Event.swift in Sources */,
 				OBJ_30 /* Observer.swift in Sources */,
+				DC30FA8A1DDAFFED00C2CC7F /* Error.swift in Sources */,
 				OBJ_31 /* Signal.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
