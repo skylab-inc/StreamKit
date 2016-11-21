@@ -13,7 +13,9 @@ public final class Signal<Value, Error: Swift.Error>: SignalType, InternalSignal
     internal var observers = Bag<Observer<Value, Error>>()
     
     private var handlerDisposable: Disposable?
-    
+
+    var cancelDisposable: Disposable?
+
     public var signal: Signal<Value, Error> {
         return self
     }
@@ -25,15 +27,21 @@ public final class Signal<Value, Error: Swift.Error>: SignalType, InternalSignal
     /// if a terminating event is sent to the observer. The Signal itself will
     /// remain alive until the observer is released. This is because the observer
     /// captures a self reference.
-    public init(_ generator: @escaping (Observer<Value, Error>) -> Disposable?) {
+    public init(_ startHandler: @escaping (Observer<Value, Error>) -> Disposable?) {
         
         let observer = Observer(with: CircuitBreaker(holding: self))
-        handlerDisposable = generator(observer)
-        
+        let handlerDisposable = startHandler(observer)
+
+        // The cancel disposable should send interrupted and then dispose of the
+        // disposable produced by the startHandler.
+        cancelDisposable = ActionDisposable {
+            observer.sendInterrupted()
+            handlerDisposable?.dispose()
+        }
     }
     
     deinit {
-        handlerDisposable?.dispose()
+        cancelDisposable?.dispose()
     }
     
     /// Creates a Signal that will be controlled by sending events to the returned
@@ -136,6 +144,14 @@ public extension SpecialSignalGenerator {
     
 }
 
+/// An internal protocol for adding methods that require access to the observers
+/// of the signal.
+internal protocol InternalSignalType: SignalType {
+
+    var observers: Bag<Observer<Value, Error>> { get }
+
+}
+
 public protocol SignalType {
     
     /// The type of values being sent on the signal.
@@ -148,14 +164,16 @@ public protocol SignalType {
     /// The exposed raw signal that underlies the `SignalType`.
     var signal: Signal<Value, Error> { get }
 
+    var cancelDisposable: Disposable { get }
+
 }
 
-/// An internal protocol for adding methods that require access to the observers
-/// of the signal.
-internal protocol InternalSignalType: SignalType {
-    
-    var observers: Bag<Observer<Value, Error>> { get }
-    
+public extension SignalType {
+
+    var cancelDisposable: Disposable {
+        return signal.cancelDisposable
+    }
+
 }
 
 public extension SignalType {
@@ -168,9 +186,9 @@ public extension SignalType {
     /// of the Disposable will have no effect on the `Signal` itself.
     @discardableResult
     public func add(observer: Observer<Value, Error>) -> Disposable? {
-        let token = signal.observers.insert(value: observer)
+        let token = signal.observers.insert(observer)
         return ActionDisposable {
-            self.signal.observers.removeValueForToken(token: token)
+            self.signal.observers.remove(using: token)
         }
         
     }
@@ -312,5 +330,78 @@ public extension SignalType {
             }
         }
     }
+
+
+    public func flatMap<U>(_ transform: @escaping (Value) -> Source<U, Error>) -> Signal<U, Error> {
+        return map(transform).joined()
+    }
     
+}
+
+extension SignalType where Value: SourceType, Error == Value.Error {
+
+    /// Listens to every `Source` produced from the current `Signal`
+    /// Starts each `Source` and forwards on all values and errors onto
+    /// the `Signal` which is returned. In this way it joins each of the
+    /// `Source`s into a single `Signal`.
+    ///
+    /// The joined `Signal` completes when the current `Signal` and all of
+    /// its produced `Source`s complete.
+    ///
+    /// Note: This means that each `Source` will be started as it is received.
+    public func joined() -> Signal<Value.Value, Error> {
+        // Start the number in flight at 1 for `self`
+
+        return Signal { observer in
+
+            var numberInFlight = 1
+            var disposables = [Disposable]()
+            func decrementInFlight() {
+                numberInFlight -= 1
+                if numberInFlight == 0 {
+                    observer.sendCompleted()
+                }
+            }
+
+            func incrementInFlight() {
+                numberInFlight += 1
+            }
+
+            self.on { event in
+
+                switch event {
+                case .next(let source):
+                    incrementInFlight()
+                    source.on { event in
+                        switch event {
+                        case .completed, .interrupted:
+                            decrementInFlight()
+
+                        case .next, .failed:
+                            observer.send(event)
+                        }
+                    }
+                    disposables.append(source.cancelDisposable)
+                    source.start()
+
+                case .failed(let error):
+                    observer.sendFailed(error)
+
+                case .completed:
+                    decrementInFlight()
+
+                case .interrupted:
+                    observer.sendInterrupted()
+                }
+
+            }
+
+            return ActionDisposable {
+                for disposable in disposables {
+                    disposable.dispose()
+                }
+            }
+            
+        }
+    }
 }

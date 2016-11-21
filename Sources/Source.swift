@@ -21,9 +21,14 @@ public final class Source<V, E: Swift.Error>: SourceType, InternalSignalType, Sp
     
     internal let startHandler: (Observer<Value, Error>) -> Disposable?
     
-    private var cancelDisposable: Disposable?
+    var cancelDisposable: Disposable?
     
-    private var started = false
+    private var started: Bool {
+        if let disposable = cancelDisposable {
+            return !disposable.disposed
+        }
+        return false
+    }
     
     /// Initializes a Source that will invoke the given closure at the
     /// invocation of `start()`.
@@ -36,8 +41,8 @@ public final class Source<V, E: Swift.Error>: SourceType, InternalSignalType, Sp
     /// 
     /// Invoking `start()` will have no effect until the signal is stopped. After
     /// `stop()` is called this process may be repeated.
-    public init(_ generator: @escaping (Observer<Value, Error>) -> Disposable?) {
-        self.startHandler = generator
+    public init(_ startHandler: @escaping (Observer<Value, Error>) -> Disposable?) {
+        self.startHandler = startHandler
     }
     
     /// Creates a Signal from the producer, then attaches the given observer to
@@ -48,8 +53,6 @@ public final class Source<V, E: Swift.Error>: SourceType, InternalSignalType, Sp
     @discardableResult
     public func start() {
         if !started {
-            started = true
-            
             let observer = Observer(with: CircuitBreaker(holding: self))
             let handlerDisposable = startHandler(observer)
             
@@ -64,9 +67,12 @@ public final class Source<V, E: Swift.Error>: SourceType, InternalSignalType, Sp
     
     public func stop() {
         cancelDisposable?.dispose()
-        started = false
     }
-    
+
+    deinit {
+        self.stop()
+    }
+
 }
 
 extension Source: CustomDebugStringConvertible {
@@ -127,9 +133,9 @@ public extension SourceType {
     /// of the Disposable will have no effect on the Signal itself.
     @discardableResult
     public func add(observer: Observer<Value, Error>) -> Disposable? {
-        let token = source.observers.insert(value: observer)
+        let token = source.observers.insert(observer)
         return ActionDisposable { [weak source = source] in
-            source?.observers.removeValueForToken(token: token)
+            source?.observers.remove(using: token)
         }
     }
     
@@ -220,6 +226,10 @@ public extension SourceType {
             return self.source.startHandler(pipeObserver)
         }
         return (sourceLeft, sourceRight)
+    }
+
+    public var identity: Source<Value, Error> {
+        return lift { $0.identity }
     }
     
     /// Maps each value in the signal to a new value.

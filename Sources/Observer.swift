@@ -26,12 +26,13 @@ class CircuitBreaker<Value, Error: Swift.Error>  {
     init(holding signal: Signal<Value, Error>?) {
         self.signal = signal
         self.action = { [weak self] event in
-            // If event is terminating dispose of the handlerDisposable.
             self?.signal?.observers.forEach { observer in
                 observer.send(event)
             }
             
             if event.isTerminating {
+                // Do not have to dispose of cancel disposable
+                // since it will be disposed when the signal is deallocated.
                 self?.signal = nil
             }
         }
@@ -42,12 +43,13 @@ class CircuitBreaker<Value, Error: Swift.Error>  {
     init(holding source: Source<Value, Error>?) {
         self.source = source
         self.action = { [weak self] event in
-            // If event is terminating dispose of the handlerDisposable.
             self?.source?.observers.forEach { observer in
                 observer.send(event)
             }
             
             if event.isTerminating {
+                // Do not have to dispose of cancel disposable
+                // since it will be disposed when the signal is deallocated.
                 self?.source = nil
             }
         }
