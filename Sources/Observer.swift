@@ -10,7 +10,7 @@ import Foundation
 
 
 /// A CiruitBreaker optionally holds a strong reference to either a
-/// `Signal` or a `ColdSignal` until a terminating event is
+/// `Signal` or a `Source` until a terminating event is
 /// received. At such time, it delivers the event and then 
 /// removes its reference. In so doing, it "breaks the circuit"
 /// between the signal, the handler, and the input observer.
@@ -18,7 +18,7 @@ import Foundation
 class CircuitBreaker<Value, Error: Swift.Error>  {
 
     private var signal: Signal<Value, Error>? = nil
-    private var coldSignal: ColdSignal<Value, Error>? = nil
+    private var source: Source<Value, Error>? = nil
     fileprivate var action: Observer<Value, Error>.Action! = nil
     
     /// Holds a strong reference to a `Signal` until a 
@@ -37,18 +37,18 @@ class CircuitBreaker<Value, Error: Swift.Error>  {
         }
     }
     
-    /// Holds a strong reference to a `ColdSignal` until a
+    /// Holds a strong reference to a `Source` until a
     /// terminating event is received.
-    init(holding coldSignal: ColdSignal<Value, Error>?) {
-        self.coldSignal = coldSignal
+    init(holding source: Source<Value, Error>?) {
+        self.source = source
         self.action = { [weak self] event in
             // If event is terminating dispose of the handlerDisposable.
-            self?.coldSignal?.observers.forEach { observer in
+            self?.source?.observers.forEach { observer in
                 observer.send(event)
             }
             
             if event.isTerminating {
-                self?.coldSignal = nil
+                self?.source = nil
             }
         }
     }

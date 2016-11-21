@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		DC30FA8A1DDAFFED00C2CC7F /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC30FA891DDAFFED00C2CC7F /* Error.swift */; };
 		OBJ_26 /* Bag.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* Bag.swift */; };
-		OBJ_27 /* ColdSignal.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* ColdSignal.swift */; };
+		OBJ_27 /* Source.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* Source.swift */; };
 		OBJ_28 /* Disposable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* Disposable.swift */; };
 		OBJ_29 /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* Event.swift */; };
 		OBJ_30 /* Observer.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_13 /* Observer.swift */; };
@@ -30,7 +30,7 @@
 
 /* Begin PBXFileReference section */
 		DC30FA891DDAFFED00C2CC7F /* Error.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
-		OBJ_10 /* ColdSignal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColdSignal.swift; sourceTree = "<group>"; };
+		OBJ_10 /* Source.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Source.swift; sourceTree = "<group>"; };
 		OBJ_11 /* Disposable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Disposable.swift; sourceTree = "<group>"; };
 		OBJ_12 /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
 		OBJ_13 /* Observer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Observer.swift; sourceTree = "<group>"; };
@@ -87,7 +87,7 @@
 			name = Products;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		OBJ_5 /*  */ = {
+		OBJ_5 = {
 			isa = PBXGroup;
 			children = (
 				OBJ_6 /* Package.swift */,
@@ -95,7 +95,6 @@
 				OBJ_15 /* Tests */,
 				OBJ_18 /* Products */,
 			);
-			name = "";
 			sourceTree = "<group>";
 		};
 		OBJ_7 /* Sources */ = {
@@ -110,11 +109,11 @@
 			isa = PBXGroup;
 			children = (
 				OBJ_9 /* Bag.swift */,
-				OBJ_10 /* ColdSignal.swift */,
 				OBJ_11 /* Disposable.swift */,
 				OBJ_12 /* Event.swift */,
 				OBJ_13 /* Observer.swift */,
 				OBJ_14 /* Signal.swift */,
+				OBJ_10 /* Source.swift */,
 				DC30FA891DDAFFED00C2CC7F /* Error.swift */,
 			);
 			name = Reflex;
@@ -172,7 +171,7 @@
 			knownRegions = (
 				en,
 			);
-			mainGroup = OBJ_5 /*  */;
+			mainGroup = OBJ_5;
 			productRefGroup = OBJ_18 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -189,7 +188,7 @@
 			buildActionMask = 0;
 			files = (
 				OBJ_26 /* Bag.swift in Sources */,
-				OBJ_27 /* ColdSignal.swift in Sources */,
+				OBJ_27 /* Source.swift in Sources */,
 				OBJ_28 /* Disposable.swift in Sources */,
 				OBJ_29 /* Event.swift in Sources */,
 				OBJ_30 /* Observer.swift in Sources */,

@@ -145,7 +145,7 @@ public protocol SignalType {
     /// then `NoError` can be used.
     associatedtype Error: Swift.Error
     
-    /// The exposed raw signal that underlies the ColdSignalType
+    /// The exposed raw signal that underlies the `SignalType`.
     var signal: Signal<Value, Error> { get }
 
 }
@@ -160,12 +160,12 @@ internal protocol InternalSignalType: SignalType {
 
 public extension SignalType {
     
-    /// Adds an observer to the Signal which observes any future events from the Signal.
-    /// If the Signal has already terminated, the observer will immediately receive an
+    /// Adds an observer to the `Signal` which observes any future events from the `Signal`.
+    /// If the `Signal` has already terminated, the observer will immediately receive an
     /// `Interrupted` event.
     ///
     /// Returns a Disposable which can be used to disconnect the observer. Disposing
-    /// of the Disposable will have no effect on the Signal itself.
+    /// of the Disposable will have no effect on the `Signal` itself.
     @discardableResult
     public func add(observer: Observer<Value, Error>) -> Disposable? {
         let token = signal.observers.insert(value: observer)
