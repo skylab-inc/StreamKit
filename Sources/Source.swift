@@ -262,6 +262,11 @@ public extension SourceType {
     public func flatMap<U>(_ transform: @escaping (Value) -> U?) -> Source<U, Error> {
         return lift { $0.flatMap(transform) }
     }
-    
+
+    public func flatMap<U>(_ transform: @escaping (Value) -> Source<U, Error>) -> Source<U, Error> {
+        return lift { $0.map(transform).joined() }
+    }
+
+
 }
 
