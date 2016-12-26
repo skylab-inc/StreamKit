@@ -10,5 +10,5 @@ language: swift
 # - gem install cocoapods # Since Travis is not always on latest version
 # - pod install --project-directory=Example
 script:
-- set -o pipefail && xcodebuild test -project Reflex.xcodeproj -scheme Reflex CODE_SIGNING_REQUIRED=NO | xcpretty
+- set -o pipefail && xcodebuild -project Reflex.xcodeproj -scheme Reflex -configuration Release ONLY_ACTIVE_ARCH=NO ENABLE_TESTABILITY=YES test | xcpretty
 - pod lib lint
