@@ -20,20 +20,28 @@ class CircuitBreaker<Value, Error: Swift.Error>  {
     private var signal: Signal<Value, Error>? = nil
     private var source: Source<Value, Error>? = nil
     fileprivate var action: Observer<Value, Error>.Action! = nil
+
+    // This variable is used to maintain memory access exclusivity when
+    // the signal or source is released causing that signal to send an
+    // interrupt to its observer.
+    private var hasTerminated = false
     
     /// Holds a strong reference to a `Signal` until a 
     /// terminating event is received.
     init(holding signal: Signal<Value, Error>?) {
         self.signal = signal
         self.action = { [weak self] event in
-            self?.signal?.observers.forEach { observer in
+            guard let weakSelf = self else { return }
+            guard !weakSelf.hasTerminated else { return }
+            weakSelf.signal?.observers.forEach { observer in
                 observer.send(event)
             }
             
             if event.isTerminating {
                 // Do not have to dispose of cancel disposable
                 // since it will be disposed when the signal is deallocated.
-                self?.signal = nil
+                weakSelf.hasTerminated = true
+                weakSelf.signal = nil
             }
         }
     }
@@ -43,6 +51,8 @@ class CircuitBreaker<Value, Error: Swift.Error>  {
     init(holding source: Source<Value, Error>?) {
         self.source = source
         self.action = { [weak self] event in
+            guard let weakSelf = self else { return }
+            guard !weakSelf.hasTerminated else { return }
             self?.source?.observers.forEach { observer in
                 observer.send(event)
             }
@@ -50,6 +60,7 @@ class CircuitBreaker<Value, Error: Swift.Error>  {
             if event.isTerminating {
                 // Do not have to dispose of cancel disposable
                 // since it will be disposed when the signal is deallocated.
+                weakSelf.hasTerminated = true
                 self?.source = nil
             }
         }

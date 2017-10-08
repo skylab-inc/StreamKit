@@ -50,7 +50,6 @@ public final class Source<V, E: Swift.Error>: SourceType, InternalSignalType, Sp
     ///
     /// Returns a Disposable which can be used to interrupt the work associated
     /// with the signal and immediately send an `Interrupted` event.
-    @discardableResult
     public func start() {
         if !started {
             let observer = Observer(with: CircuitBreaker(holding: self))
