@@ -15,5 +15,9 @@ let package = Package(
         .target(
             name: "StreamKit"
         ),
+        .testTarget(
+            name: "StreamKitTests",
+            dependencies: ["StreamKit"]
+        ),
     ]
 )

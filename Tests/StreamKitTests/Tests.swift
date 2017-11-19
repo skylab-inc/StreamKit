@@ -1,4 +1,4 @@
-@testable import Reflex
+@testable import StreamKit
 
 import XCTest
 
