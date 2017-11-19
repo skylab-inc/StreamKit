@@ -31,7 +31,7 @@ public struct Bag<Element> {
     ///   - value: A value that will be inserted.
     @discardableResult
     public mutating func insert(_ value: Element) -> RemovalToken {
-        let (nextIdentifier, overflow) = UInt.addWithOverflow(currentIdentifier, 1)
+        let (nextIdentifier, overflow) = currentIdentifier.addingReportingOverflow(1)
         if overflow {
             reindex()
         }
