@@ -327,14 +327,13 @@ public extension SignalType {
         }
     }
 
-
-    public func flatMap<U>(_ transform: @escaping (Value) -> Source<U>) -> Signal<U> {
+    public func flatMap<U>(_ transform: @escaping (Value) -> Signal<U>) -> Signal<U> {
         return map(transform).joined()
     }
     
 }
 
-extension SignalType where Value: SourceType {
+extension SignalType where Value: SignalType {
 
     /// Listens to every `Source` produced from the current `Signal`
     /// Starts each `Source` and forwards on all values and errors onto
@@ -378,7 +377,7 @@ extension SignalType where Value: SourceType {
                         }
                     }
                     disposables.append(source.cancelDisposable)
-                    source.start()
+                    (source as? Source<Value.Value>)?.start()
 
                 case .failed(let error):
                     observer.sendFailed(error)
@@ -401,3 +400,4 @@ extension SignalType where Value: SourceType {
         }
     }
 }
+
