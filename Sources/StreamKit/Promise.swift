@@ -10,7 +10,9 @@ import PromiseKit
 
 extension Promise {
 
-    func asSignal() -> Signal<T> {
+    public func asSignal() -> Signal<T> {
+        // TODO: If the promise is already resolved the value will
+        // be sent to the signals before there are any observers added.
         return Signal { observer in
             self.then { value -> () in
                 observer.sendNext(value)
@@ -26,7 +28,7 @@ extension Promise {
 
 extension SignalType {
 
-    func asPromise() -> Promise<[Value]> {
+    public func asPromise() -> Promise<[Value]> {
         var values: [Value] = []
         return Promise { resolve, reject in
             self.onNext {
