@@ -8,17 +8,36 @@
 import Foundation
 import PromiseKit
 
-extension SignalType {
+extension Promise {
 
-    static func from(promise: Promise<Value>) -> Signal<Value> {
+    func asSignal() -> Signal<T> {
         return Signal { observer in
-            promise.then { value -> () in
+            self.then { value -> () in
                 observer.sendNext(value)
                 observer.sendCompleted()
             }.catch { error in
                 observer.sendFailed(error)
             }
             return nil
+        }
+    }
+
+}
+
+extension SignalType {
+
+    func asPromise() -> Promise<[Value]> {
+        var values: [Value] = []
+        return Promise { resolve, reject in
+            self.onNext {
+                values.append($0)
+            }
+            self.onCompleted {
+                resolve(values)
+            }
+            self.onFailed {
+                reject($0)
+            }
         }
     }
 
