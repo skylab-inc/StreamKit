@@ -12,7 +12,7 @@ import Foundation
 ///
 /// Signals must conform to the grammar:
 /// `next* (failed | completed | interrupted)?`
-public enum Event<Value, Error: Swift.Error> {
+public enum Event<Value> {
     
     /// A value provided by the signal.
     case next(Value)
@@ -42,7 +42,7 @@ public enum Event<Value, Error: Swift.Error> {
     }
     
     /// Lifts the given function over the event's value.
-    public func map<U>(_ f: (Value) -> U) -> Event<U, Error> {
+    public func map<U>(_ f: (Value) -> U) -> Event<U> {
         switch self {
         case let .next(value):
             return .next(f(value))
@@ -59,7 +59,7 @@ public enum Event<Value, Error: Swift.Error> {
     }
     
     /// Lifts the given function over the event's value.
-    public func flatMap<U>(_ f: (Value) -> U?) -> Event<U, Error>? {
+    public func flatMap<U>(_ f: (Value) -> U?) -> Event<U>? {
         switch self {
         case let .next(value):
             if let nextValue = f(value) {
@@ -79,7 +79,7 @@ public enum Event<Value, Error: Swift.Error> {
     }
     
     /// Lifts the given function over the event's error.
-    public func mapError<F>(_ f: (Error) -> F) -> Event<Value, F> {
+    public func mapError<F: Error>(_ f: (Error) -> F) -> Event<Value> {
         switch self {
         case let .next(value):
             return .next(value)
@@ -114,13 +114,13 @@ public enum Event<Value, Error: Swift.Error> {
     }
 }
 
-public func == <Value: Equatable, Error: Equatable> (lhs: Event<Value, Error>, rhs: Event<Value, Error>) -> Bool {
+public func == <Value: Equatable> (lhs: Event<Value>, rhs: Event<Value>) -> Bool {
     switch (lhs, rhs) {
     case let (.next(left), .next(right)):
         return left == right
         
     case let (.failed(left), .failed(right)):
-        return left == right
+        return left.localizedDescription == right.localizedDescription
         
     case (.completed, .completed):
         return true

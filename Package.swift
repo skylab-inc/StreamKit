@@ -11,9 +11,13 @@ let package = Package(
             targets: ["StreamKit"]
         ),
     ],
+    dependencies: [
+        .package(url: "https://github.com/mxcl/PromiseKit.git", from: "4.5.0"),
+    ],
     targets: [
         .target(
-            name: "StreamKit"
+            name: "StreamKit",
+            dependencies: ["PromiseKit"]
         ),
         .testTarget(
             name: "StreamKitTests",

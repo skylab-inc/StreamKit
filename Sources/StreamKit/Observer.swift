@@ -15,11 +15,11 @@ import Foundation
 /// removes its reference. In so doing, it "breaks the circuit"
 /// between the signal, the handler, and the input observer.
 /// This allows the downstream signal to be released.
-class CircuitBreaker<Value, Error: Swift.Error>  {
+class CircuitBreaker<Value>  {
 
-    private var signal: Signal<Value, Error>? = nil
-    private var source: Source<Value, Error>? = nil
-    fileprivate var action: Observer<Value, Error>.Action! = nil
+    private var signal: Signal<Value>? = nil
+    private var source: Source<Value>? = nil
+    fileprivate var action: Observer<Value>.Action! = nil
 
     // This variable is used to maintain memory access exclusivity when
     // the signal or source is released causing that signal to send an
@@ -28,7 +28,7 @@ class CircuitBreaker<Value, Error: Swift.Error>  {
     
     /// Holds a strong reference to a `Signal` until a 
     /// terminating event is received.
-    init(holding signal: Signal<Value, Error>?) {
+    init(holding signal: Signal<Value>?) {
         self.signal = signal
         self.action = { [weak self] event in
             guard let weakSelf = self else { return }
@@ -48,7 +48,7 @@ class CircuitBreaker<Value, Error: Swift.Error>  {
     
     /// Holds a strong reference to a `Source` until a
     /// terminating event is received.
-    init(holding source: Source<Value, Error>?) {
+    init(holding source: Source<Value>?) {
         self.source = source
         self.action = { [weak self] event in
             guard let weakSelf = self else { return }
@@ -66,19 +66,19 @@ class CircuitBreaker<Value, Error: Swift.Error>  {
         }
     }
     
-    fileprivate init(with action: @escaping (Event<Value, Error>) -> Void) {
+    fileprivate init(with action: @escaping (Event<Value>) -> Void) {
         self.action = action
     }
     
 }
 
 
-public struct Observer<Value, Error: Swift.Error> {
+public struct Observer<Value> {
     
-    public typealias Action = (Event<Value, Error>) -> Void
-    let breaker: CircuitBreaker<Value, Error>
+    public typealias Action = (Event<Value>) -> Void
+    let breaker: CircuitBreaker<Value>
     
-    init(with breaker: CircuitBreaker<Value, Error>) {
+    init(with breaker: CircuitBreaker<Value>) {
         self.breaker = breaker
     }
     
@@ -112,7 +112,7 @@ public struct Observer<Value, Error: Swift.Error> {
     }
     
     /// Puts any `Event` into the the given observer.
-    public func send(_ event: Event<Value, Error>) {
+    public func send(_ event: Event<Value>) {
         breaker.action(event)
     }
     

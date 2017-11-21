@@ -8,18 +8,17 @@
 
 import Foundation
 
-public final class Source<V, E: Swift.Error>: SourceType, InternalSignalType, SpecialSignalGenerator {
+public final class Source<V>: SourceType, InternalSignalType, SpecialSignalGenerator {
     
     public typealias Value = V
-    public typealias Error = E
-    
-    internal var observers = Bag<Observer<Value, Error>>()
+
+    internal var observers = Bag<Observer<Value>>()
 
     public var source: Source {
         return self
     }
     
-    internal let startHandler: (Observer<Value, Error>) -> Disposable?
+    internal let startHandler: (Observer<Value>) -> Disposable?
     
     var cancelDisposable: Disposable?
     
@@ -41,7 +40,7 @@ public final class Source<V, E: Swift.Error>: SourceType, InternalSignalType, Sp
     /// 
     /// Invoking `start()` will have no effect until the signal is stopped. After
     /// `stop()` is called this process may be repeated.
-    public init(_ startHandler: @escaping (Observer<Value, Error>) -> Disposable?) {
+    public init(_ startHandler: @escaping (Observer<Value>) -> Disposable?) {
         self.startHandler = startHandler
     }
     
@@ -86,7 +85,7 @@ extension Source: CustomDebugStringConvertible {
 public protocol SourceType: SignalType {
     
     /// The exposed raw signal that underlies the SourceType
-    var source: Source<Value, Error> { get }
+    var source: Source<Value> { get }
     
     /// Invokes the closure provided upon initialization, and passes in a newly
     /// created observer to which events can be sent.
@@ -101,7 +100,7 @@ public protocol SourceType: SignalType {
 
 public extension SourceType {
     
-    public var signal: Signal<Value, Error> {
+    public var signal: Signal<Value> {
         return Signal { observer in
             self.source.add(observer: observer)
         }
@@ -131,7 +130,7 @@ public extension SourceType {
     /// Returns a Disposable which can be used to disconnect the observer. Disposing
     /// of the Disposable will have no effect on the Signal itself.
     @discardableResult
-    public func add(observer: Observer<Value, Error>) -> Disposable? {
+    public func add(observer: Observer<Value>) -> Disposable? {
         let token = source.observers.insert(observer)
         return ActionDisposable { [weak source = source] in
             source?.observers.remove(using: token)
@@ -143,7 +142,7 @@ public extension SourceType {
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
-    public func start(with observer: Observer<Value, Error>) -> Disposable? {
+    public func start(with observer: Observer<Value>) -> Disposable? {
         let disposable = source.add(observer: observer)
         source.start()
         return disposable
@@ -154,7 +153,7 @@ public extension SourceType {
     ///
     /// Returns a Disposable which can be used to dispose of the added observer.
     @discardableResult
-    public func start(_ observerAction: @escaping Observer<Value, Error>.Action) -> Disposable? {
+    public func start(_ observerAction: @escaping Observer<Value>.Action) -> Disposable? {
         return start(with: Observer(observerAction))
     }
     
@@ -203,66 +202,66 @@ public extension SourceType {
     ///
     /// The new `Source` is in no way related to the source `Source` except
     /// that they share a reference to the same `startHandler`.
-    public func lift<U, F>(_ transform: @escaping (Signal<Value, Error>) -> Signal<U, F>) -> Source<U, F> {
+    public func lift<U>(_ transform: @escaping (Signal<Value>) -> Signal<U>) -> Source<U> {
         return Source { observer in
-            let (pipeSignal, pipeObserver) = Signal<Value, Error>.pipe()
+            let (pipeSignal, pipeObserver) = Signal<Value>.pipe()
             transform(pipeSignal).add(observer: observer)
             return self.source.startHandler(pipeObserver)
         }
     }
     
-    public func lift<U, F>(_ transform: @escaping (Signal<Value, Error>) -> (Signal<U, F>, Signal<U, F>))
-        -> (Source<U, F>, Source<U, F>)
+    public func lift<U>(_ transform: @escaping (Signal<Value>) -> (Signal<U>, Signal<U>))
+        -> (Source<U>, Source<U>)
     {
-        let (pipeSignal, pipeObserver) = Signal<Value, Error>.pipe()
+        let (pipeSignal, pipeObserver) = Signal<Value>.pipe()
         let (left, right) = transform(pipeSignal)
-        let sourceLeft = Source<U, F> { observer in
+        let sourceLeft = Source<U> { observer in
             left.add(observer: observer)
             return self.source.startHandler(pipeObserver)
         }
-        let sourceRight = Source<U, F> { observer in
+        let sourceRight = Source<U> { observer in
             right.add(observer: observer)
             return self.source.startHandler(pipeObserver)
         }
         return (sourceLeft, sourceRight)
     }
 
-    public var identity: Source<Value, Error> {
+    public var identity: Source<Value> {
         return lift { $0.identity }
     }
     
     /// Maps each value in the signal to a new value.
-    public func map<U>(_ transform: @escaping (Value) -> U) -> Source<U, Error> {
+    public func map<U>(_ transform: @escaping (Value) -> U) -> Source<U> {
         return lift { $0.map(transform) }
     }
     
     /// Maps errors in the signal to a new error.
-    public func mapError<F>(_ transform: @escaping (Error) -> F) -> Source<Value, F> {
+    public func mapError<F: Error>(_ transform: @escaping (Error) -> F) -> Source<Value> {
         return lift { $0.mapError(transform) }
     }
     
     /// Preserves only the values of the signal that pass the given predicate.
-    public func filter(_ predicate: @escaping (Value) -> Bool) -> Source<Value, Error> {
+    public func filter(_ predicate: @escaping (Value) -> Bool) -> Source<Value> {
         return lift { $0.filter(predicate) }
     }
     
     /// Splits the signal into two signals. The first signal in the tuple matches the
     /// predicate, the second signal does not match the predicate
     public func partition(_ predicate: @escaping (Value) -> Bool)
-        -> (Source<Value, Error>, Source<Value, Error>) {
+        -> (Source<Value>, Source<Value>) {
         return lift { $0.partition(predicate) }
     }
     
     /// Aggregate values into a single combined value. Mirrors the Swift Collection
-    public func reduce<T>(initial: T, _ combine: @escaping (T, Value) -> T) -> Source<T, Error> {
+    public func reduce<T>(initial: T, _ combine: @escaping (T, Value) -> T) -> Source<T> {
         return lift { $0.reduce(initial: initial, combine) }
     }
     
-    public func flatMap<U>(_ transform: @escaping (Value) -> U?) -> Source<U, Error> {
+    public func flatMap<U>(_ transform: @escaping (Value) -> U?) -> Source<U> {
         return lift { $0.flatMap(transform) }
     }
 
-    public func flatMap<U>(_ transform: @escaping (Value) -> Source<U, Error>) -> Source<U, Error> {
+    public func flatMap<U>(_ transform: @escaping (Value) -> Source<U>) -> Source<U> {
         return lift { $0.map(transform).joined() }
     }
 
