@@ -20,7 +20,7 @@ public final class Source<V>: SourceType, InternalSignalType, SpecialSignalGener
     
     internal let startHandler: (Observer<Value>) -> Disposable?
     
-    var cancelDisposable: Disposable?
+    public var cancelDisposable: Disposable?
     
     private var started: Bool {
         if let disposable = cancelDisposable {

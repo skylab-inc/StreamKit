@@ -14,7 +14,7 @@ public final class Signal<Value>: SignalType, InternalSignalType, SpecialSignalG
     
     private var handlerDisposable: Disposable?
 
-    var cancelDisposable: Disposable?
+    public var cancelDisposable: Disposable?
 
     public var signal: Signal<Value> {
         return self
@@ -160,15 +160,7 @@ public protocol SignalType {
     /// The exposed raw signal that underlies the `SignalType`.
     var signal: Signal<Value> { get }
 
-    var cancelDisposable: Disposable { get }
-
-}
-
-public extension SignalType {
-
-    var cancelDisposable: Disposable {
-        return signal.cancelDisposable
-    }
+    var cancelDisposable: Disposable? { get }
 
 }
 
@@ -376,7 +368,7 @@ extension SignalType where Value: SignalType {
                             observer.send(event)
                         }
                     }
-                    disposables.append(source.cancelDisposable)
+                    source.cancelDisposable.map { disposables.append($0) }
                     (source as? Source<Value.Value>)?.start()
 
                 case .failed(let error):
